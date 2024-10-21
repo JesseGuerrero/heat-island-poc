@@ -20,15 +20,10 @@
         top: 30px;
         left: 60px;
       }
-      /* input {
-        width: 40px;
-      } */
       #paneDiv {
         padding: 10px;
         width: 270px;
         background-color: rgba(255, 255, 255, 0.8);
-        /* font-size: 1.1em; */
-        /* float: right; */
         position: absolute;
         bottom: 140;
         right: 0;
@@ -37,24 +32,12 @@
 
     <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css" />
     <script src="https://js.arcgis.com/4.26/"></script>
-
-    <script src="./index.js"></script>
-    <!-- <script src="./test.js"></script> -->
-    <!-- <script>
-      fetch('http://localhost:8000/api').then(res => res.json()).then(res => console.log(res));
-    </script> -->
+    <script src="index.js"></script>
   </head>
 
   <body>
     <div id="header" style="vertical-align: middle; margin-top: -20; padding-left: 15; font-size: 1.1em;">
-      NZEUC 2023 - Heat Island Simulator
-      <!-- <label>Tree Impact Buffer</label>
-      <input name="treeImpactBuffer" id="treeImpactBuffer" type="number"/>
-      <button id="updateBufferButton">Update Buffer</button>
-      <label>Tree Cooling Temperature</label>
-      <input name="treeCoolingTemperature" id="treeCoolingTemperature" type="number" />
-      <button id="updateTemperatureButton">Update Temperature</button>
-      <p>Buffer: <span id="showBuffer"></span>m | Temperature: <span id="showTemp"></span>&deg;C</p> -->
+      SATX 2024 - Heat Island Simulator
     </div>
     <div id="viewDiv"></div>
     <div id="infoDiv"> 
@@ -64,41 +47,34 @@
         id="addTrees"
         value="Add Trees"
       />
-      <input
-        class="esri-component esri-widget esri-interactive"
-        type="button"
-        id="getData"
-        value="Query Area"
-      />
-      <input
-        class="esri-component esri-widget esri-interactive"
-        type="button"
-        id="submitChanges"
-        value="Submit Changes"
-      />
     </div>
     <div id="paneDiv" class="esri-widget">
-      <b>Impact Area: <span id="showBuffer"></span>m</b><br>
-      <b>Tree Species Cooling: <span id="showTemp"></span> °C</b>
+      <b>View Statistics:</b><br>
+      Building Count: <b><span id="buildingCount">0</span></b><br>
+      Tree Count: <b><span id="treeCount">0</span></b><br>
+      Average temperature: <b>90°F</b><br>
       <br>
+      <b>LST Date</b>
       <br>
-      <b>Tree Type</b>
-      <br>
-      <!-- https://developers.arcgis.com/javascript/latest/visualization/symbols-color-ramps/esri-web-style-symbols-3d/ -->
-      <select id="selectTree" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
-        <option value="Populus">White Poplar</option>
-        <option value="Tilia">Basswood</option>
-        <option value="Eucalyptus">Blue Gum Eucalyptus</option>
+      <select id="selectLST" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
+        <option value=1>Oct 2024</option>
+        <option value=2>June 2024</option>
+        <option value=3>March 2024</option>
       </select>
-      <!-- <p>Tree impact buffer diameter:</p>
-      <input class="esri-component esri-widget esri-interactive" type="range" min="1" max="15" id="treeImpactBuffer" oninput="this.nextElementSibling.value = this.value" />
-      <output style="padding: 15px;">7</output>
-      <p>Tree cooling temperature</p>
-      <input class="esri-component esri-widget esri-interactive" type="range" min="1" max="5" id="treeCoolingTemperature" oninput="this.nextElementSibling.value = this.value"/>
-      <output style="padding: 15px;">4</output>
+      <b>Tree Year</b>
       <br>
-      <button style="margin: 10px;" class="esri-component esri-widget esri-interactive" id="updateValues">Update</button> -->
-
+      <select id="selectTreePopulus" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
+        <option value=1>2021</option>
+        <option value=2>2019</option>
+        <option value=3>2017</option>
+      </select>
+      <b>Building Year</b>
+      <br>
+      <select id="selectBuildingPopulos" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
+        <option value=1>2021</option>
+        <option value=2>2019</option>
+        <option value=3>2017</option>
+      </select>
     </div>
   </body>
 </html>
