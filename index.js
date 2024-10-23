@@ -6,8 +6,11 @@ require([
     "esri/layers/FeatureLayer",
     "esri/layers/SceneLayer",
     "esri/layers/TileLayer",
+    "esri/symbols/PolygonSymbol3D",
+    "esri/symbols/FillSymbol3DLayer",
+    "esri/layers/VectorTileLayer",
     "esri/geometry/Extent" // Import Extent module for spatial query
-], function(Map, SceneView, esriRequest, IdentityManager, FeatureLayer, SceneLayer, TileLayer, Extent) {
+], function(Map, SceneView, esriRequest, IdentityManager, FeatureLayer, SceneLayer, TileLayer, PolygonSymbol3D, FillSymbol3DLayer, VectorTileLayer, Extent) {
 
     // Step 1: Define your ArcGIS Online credentials (for development purposes)
     const username = "jesus.guerrero6_utsa";
@@ -58,6 +61,18 @@ require([
             }
         });
 
+        const popupTemplate = {
+            title: "Grid Information",
+            content: [{
+                type: "fields",
+                fieldInfos: [{
+                    fieldName: "gridcode", // The original field name
+                    label: "Temperature(F)",  // Renaming it in the popup
+                    visible: true // Ensure only this field is visible
+                }]
+            }]
+        };
+
         const buildingsLayer = new SceneLayer({
             portalItem: {
                 id: "638d033828d7498f84550cb677b53215",
@@ -84,15 +99,69 @@ require([
                 id: "a1f2a60c2fc44eadb8fcdb693d6c59d7",
                 token: token
             },
-            elevationInfo: {
-                mode: "on-the-ground"
-            },
             opacity: 0.5
         });
+        map.add(rasterTileLayer);
+
+        // Create the 3D symbol for the polygons
+        const polygonSymbol3D = new PolygonSymbol3D({
+            symbolLayers: [
+                new FillSymbol3DLayer({
+                    material: { color: [255, 255, 0, 0.0] }, // Set fill color
+                    outline: {
+                        color: [255, 0, 0, 0.0], // Set outline color
+                        size: "1px"
+                    }
+                })
+            ]
+        });
+
+        // Define the renderer for the FeatureLayer
+        const renderer = {
+            type: "simple", // Use simple renderer
+            symbol: polygonSymbol3D // Apply the 3D symbol to all features in the layer
+        };
+
+        const featureLayer = new FeatureLayer({
+            portalItem: {
+                id: "cb3e63d1a69e44239d149a5078b8e264",
+                token: token
+            },
+            popupTemplate: popupTemplate,
+            renderer: renderer,
+            opacity: 0.5
+        });
+        map.add(featureLayer);
 
         map.add(buildingsLayer);
         map.add(treesLayer);
-        map.add(rasterTileLayer);
+
+        function calculateAverageTemperature() {
+            const visibleExtent = view.extent; // Get the current visible extent
+
+            const query = featureLayer.createQuery();
+            query.geometry = visibleExtent; // Limit query to the visible extent
+            query.outFields = ["gridcode"]; // Only retrieve the 'gridcode' field (temperature)
+            query.returnGeometry = false;   // We don't need the geometry
+
+            featureLayer.queryFeatures(query).then(function(result) {
+                let totalTemperature = 0;
+                let featureCount = result.features.length;
+
+                // Sum up the temperatures
+                result.features.forEach(function(feature) {
+                    totalTemperature += feature.attributes.gridcode;
+                });
+
+                // Calculate the average temperature
+                let averageTemperature = featureCount > 0 ? (totalTemperature / featureCount).toFixed(2) : "N/A";
+
+                // Update the HTML element with the calculated average temperature
+                document.querySelector("#avgTemperature").innerHTML = averageTemperature + " °F";
+            }).catch(function(error) {
+                console.error("Error querying features: ", error);
+            });
+        }
 
         function updateVisibleCounts() {
             const visibleExtent = view.extent;  // Get the current visible extent
@@ -120,6 +189,7 @@ require([
             }).catch(function(error) {
                 console.error("Error querying visible tree count: ", error);
             });
+            calculateAverageTemperature();
         }
 
         // Initially query the visible building count when the view is loaded
