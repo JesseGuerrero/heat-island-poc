@@ -75,7 +75,7 @@ require([
 
         const buildingsLayer = new SceneLayer({
             portalItem: {
-                id: "638d033828d7498f84550cb677b53215",
+                id: "5f3bfa18600a41979e989f357f4bcc76",
                 token: token
             },
             elevationInfo: {
@@ -83,6 +83,18 @@ require([
                 offset: 0
             }
         });
+
+        const otherLayer = new SceneLayer({
+            portalItem: {
+                id: "a553a5d36795411a905844082ddcb70f",
+                token: token
+            },
+            elevationInfo: {
+                mode: "absolute-height",
+                offset: 0
+            }
+        });
+        map.add(otherLayer);
 
         const treesLayer = new SceneLayer({
             portalItem: {
@@ -94,14 +106,22 @@ require([
             }
         });
 
-        const rasterTileLayer = new TileLayer({
+        const rasterFebTileLayer = new TileLayer({
+            portalItem: {
+                id: "7a2c861aa8ff41ec9a6ef0b0d43f51e4",
+                token: token
+            },
+            opacity: 0.5
+        });
+
+        const rasterOctTileLayer = new TileLayer({
             portalItem: {
                 id: "a1f2a60c2fc44eadb8fcdb693d6c59d7",
                 token: token
             },
             opacity: 0.5
         });
-        map.add(rasterTileLayer);
+        map.add(rasterOctTileLayer);
 
         // Create the 3D symbol for the polygons
         const polygonSymbol3D = new PolygonSymbol3D({
@@ -132,6 +152,36 @@ require([
             opacity: 0.5
         });
         map.add(featureLayer);
+
+        // Function to handle LST selection change
+        function handleLSTChange() {
+            const lstSelect = document.getElementById("selectLST");
+            const selectedValue = lstSelect.value;
+
+            if (selectedValue == 1) {  // Oct 2024 selected
+                // Remove rasterFebTileLayer and add rasterOctTileLayer and featureLayer
+                if (map.layers.includes(rasterFebTileLayer)) {
+                    map.remove(rasterFebTileLayer);
+                }
+                if (!map.layers.includes(rasterOctTileLayer)) {
+                    map.add(rasterOctTileLayer);
+                }
+                if (!map.layers.includes(featureLayer)) {
+                    map.add(featureLayer);
+                }
+            } else if (selectedValue == 2) {  // Feb 2024 selected
+                // Remove rasterOctTileLayer and featureLayer, add rasterFebTileLayer
+                if (map.layers.includes(rasterOctTileLayer)) {
+                    map.remove(rasterOctTileLayer);
+                }
+                if (map.layers.includes(featureLayer)) {
+                    map.remove(featureLayer);
+                }
+                if (!map.layers.includes(rasterFebTileLayer)) {
+                    map.add(rasterFebTileLayer);
+                }
+            }
+        }
 
         map.add(buildingsLayer);
         map.add(treesLayer);
