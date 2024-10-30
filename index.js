@@ -9,8 +9,12 @@ require([
     "esri/symbols/PolygonSymbol3D",
     "esri/symbols/FillSymbol3DLayer",
     "esri/layers/VectorTileLayer",
-    "esri/geometry/Extent" // Import Extent module for spatial query
-], function(Map, SceneView, esriRequest, IdentityManager, FeatureLayer, SceneLayer, TileLayer, PolygonSymbol3D, FillSymbol3DLayer, VectorTileLayer, Extent) {
+    "esri/geometry/Extent",
+    "esri/widgets/Editor",
+    "esri/widgets/Sketch",
+    "esri/layers/GraphicsLayer",
+    "constants.js"
+], function(Map, SceneView, esriRequest, IdentityManager, FeatureLayer, SceneLayer, TileLayer, PolygonSymbol3D, FillSymbol3DLayer, VectorTileLayer, Extent, Editor, Sketch, GraphicsLayer, constants) {
 
     // Step 1: Define your ArcGIS Online credentials (for development purposes)
     const username = "jesus.guerrero6_utsa";
@@ -73,6 +77,31 @@ require([
             }]
         };
 
+        const treeRenderer = {
+            type: "simple", // autocasts as new SimpleRenderer()
+            symbol: {
+                type: "web-style", // autocasts as new WebStyleSymbol()
+                styleName: "EsriLowPolyVegetationStyle",
+                name: "Populus",
+            },
+            label: "generic tree",
+            visualVariables: [
+                {
+                    type: "size",
+                    axis: "height",
+                    field: "Tree_H",
+                    valueUnit: "meters",
+                },
+            ],
+        };
+
+        // layer for sketch points
+        const graphicsLayer = new GraphicsLayer({
+            elevationInfo: {
+                mode: "on-the-ground",
+            },
+        });
+
         const buildingsLayer = new SceneLayer({
             portalItem: {
                 id: "5f3bfa18600a41979e989f357f4bcc76",
@@ -84,7 +113,7 @@ require([
             }
         });
 
-        const otherLayer = new SceneLayer({
+        const threeDBuildingMesh = new SceneLayer({
             portalItem: {
                 id: "a553a5d36795411a905844082ddcb70f",
                 token: token
@@ -94,7 +123,7 @@ require([
                 offset: 0
             }
         });
-        map.add(otherLayer);
+
 
         const treesLayer = new SceneLayer({
             portalItem: {
@@ -105,23 +134,6 @@ require([
                 mode: "on-the-ground"
             }
         });
-
-        const rasterFebTileLayer = new TileLayer({
-            portalItem: {
-                id: "7a2c861aa8ff41ec9a6ef0b0d43f51e4",
-                token: token
-            },
-            opacity: 0.5
-        });
-
-        const rasterOctTileLayer = new TileLayer({
-            portalItem: {
-                id: "a1f2a60c2fc44eadb8fcdb693d6c59d7",
-                token: token
-            },
-            opacity: 0.5
-        });
-        map.add(rasterOctTileLayer);
 
         // Create the 3D symbol for the polygons
         const polygonSymbol3D = new PolygonSymbol3D({
@@ -136,13 +148,96 @@ require([
             ]
         });
 
+
+        // initial building feature to initialaise heat island points client layer
+        let heatIslandfeatures = [
+            {
+                geometry: {
+                    type: "point",
+                    x: 172.639847,
+                    y: -43.52565,
+                    z: 30,
+                },
+                attributes: {
+                    ObjectID: 1,
+                    grid_code: 1,
+                    pointid: 1,
+                    MERGE_SRC: "1",
+                    mergeSrc: 1,
+                    heatValue: 1,
+                    heatValueSimplified: 1,
+                },
+            },
+        ];
+
+        // initial building feature to initialaise tree client layer
+        let treeFeatures = [
+            {
+                geometry: {
+                    type: "point",
+                    x: 172.639847,
+                    y: -43.52565,
+                    z: 30,
+                },
+                attributes: {
+                    OBJECTID: 0,
+                    Tree_Height: 0,
+                    Tree_H: 0,
+                },
+            },
+        ];
+
+        let treeClientLayer = new FeatureLayer({
+            title: "Add Trees",
+            source: treeFeatures,
+            fields: [
+                {
+                    name: "OBJECTID",
+                    type: "oid",
+                },
+                {
+                    name: "Tree_Height",
+                    type: "string",
+                },
+                {
+                    name: "Tree_H",
+                    type: "double",
+                },
+            ],
+            objectIdField: "OBJECTID",
+            elevationInfo: {
+                mode: "on-the-ground",
+                offset: 0,
+            },
+            renderer: treeRenderer,
+        });
+        view.map.add(treeClientLayer);
+
         // Define the renderer for the FeatureLayer
         const renderer = {
             type: "simple", // Use simple renderer
             symbol: polygonSymbol3D // Apply the 3D symbol to all features in the layer
         };
 
-        const featureLayer = new FeatureLayer({
+        const rasterFebTileLayer = new TileLayer({
+            portalItem: {
+                id: "df92570bf5ca49ee84c6629aff979a3a",
+                token: token
+            },
+            opacity: 0.5
+        });
+
+        const febVectorLST = new FeatureLayer({
+            portalItem: {
+                id: "aa3c051544a9470b9fef5dfd66f872bb",
+                token: token
+            },
+            popupTemplate: popupTemplate,
+            renderer: renderer,
+            opacity: 0.5
+        });
+
+        const octVectorLST = new FeatureLayer({
             portalItem: {
                 id: "cb3e63d1a69e44239d149a5078b8e264",
                 token: token
@@ -151,10 +246,27 @@ require([
             renderer: renderer,
             opacity: 0.5
         });
-        map.add(featureLayer);
 
-        // Function to handle LST selection change
-        function handleLSTChange() {
+        const rasterOctTileLayer = new TileLayer({
+            portalItem: {
+                id: "a1f2a60c2fc44eadb8fcdb693d6c59d7",
+                token: token
+            },
+            opacity: 0.5
+        });
+
+        var treeLayer = new FeatureLayer({
+            portalItem: {
+                id: "72c9f18c98f047a2815972b9b1628a84",
+            },
+            // url: "https://services.arcgis.com/hLRlshaEMEYQG5A8/arcgis/rest/services/HamiltonTreesWithRemovedFeatures/FeatureServer",
+            renderer: treeRenderer,
+            elevationInfo: {
+                mode: "on-the-ground",
+            },
+        });
+
+        window.handleLSTChange = function handleLSTChange() {
             const lstSelect = document.getElementById("selectLST");
             const selectedValue = lstSelect.value;
 
@@ -163,38 +275,40 @@ require([
                 if (map.layers.includes(rasterFebTileLayer)) {
                     map.remove(rasterFebTileLayer);
                 }
+                if (map.layers.includes(febVectorLST)) {
+                    map.remove(febVectorLST);
+                }
                 if (!map.layers.includes(rasterOctTileLayer)) {
                     map.add(rasterOctTileLayer);
                 }
-                if (!map.layers.includes(featureLayer)) {
-                    map.add(featureLayer);
+                if (!map.layers.includes(octVectorLST)) {
+                    map.add(octVectorLST);
                 }
             } else if (selectedValue == 2) {  // Feb 2024 selected
-                // Remove rasterOctTileLayer and featureLayer, add rasterFebTileLayer
                 if (map.layers.includes(rasterOctTileLayer)) {
                     map.remove(rasterOctTileLayer);
                 }
-                if (map.layers.includes(featureLayer)) {
-                    map.remove(featureLayer);
+                if (map.layers.includes(octVectorLST)) {
+                    map.remove(octVectorLST);
                 }
                 if (!map.layers.includes(rasterFebTileLayer)) {
                     map.add(rasterFebTileLayer);
                 }
+                if (!map.layers.includes(febVectorLST)) {
+                    map.add(febVectorLST);
+                }
             }
         }
-
-        map.add(buildingsLayer);
-        map.add(treesLayer);
 
         function calculateAverageTemperature() {
             const visibleExtent = view.extent; // Get the current visible extent
 
-            const query = featureLayer.createQuery();
+            const query = octVectorLST.createQuery();
             query.geometry = visibleExtent; // Limit query to the visible extent
             query.outFields = ["gridcode"]; // Only retrieve the 'gridcode' field (temperature)
             query.returnGeometry = false;   // We don't need the geometry
 
-            featureLayer.queryFeatures(query).then(function(result) {
+            octVectorLST.queryFeatures(query).then(function(result) {
                 let totalTemperature = 0;
                 let featureCount = result.features.length;
 
@@ -242,8 +356,93 @@ require([
             calculateAverageTemperature();
         }
 
-        // Initially query the visible building count when the view is loaded
-        view.when(updateVisibleCounts);
+        let treeBtn = document.querySelector("#addTrees");
+        treeBtn.addEventListener("click", (event) => {
+            // tree query
+            let treeQuery = treeLayer.createQuery();
+            treeQuery.geometry =
+                graphicsLayer.graphics.items[
+                graphicsLayer.graphics.items.length - 1
+                    ].geometry;
+            treeQuery.distance = 50;
+            treeQuery.units = "meters";
+            treeQuery.spatialRelationship = "intersects"; // this is the default
+            treeQuery.returnGeometry = true;
+            treeLayer.queryFeatures(treeQuery).then(function (response) {
+                const edits = {
+                    addFeatures: response.features,
+                };
+                treeClientLayer.applyEdits(edits).then(() => {
+                    for (let i = 0; i < response.features.length; i++) {
+                        // createHeatUpdateQuery(response.features[i], "cooler")
+                    }
+                });
+            });
+        });
+
+        map.add(buildingsLayer);
+        map.add(treesLayer);
+        map.add(octVectorLST);
+        map.add(rasterOctTileLayer);
+        map.add(threeDBuildingMesh);
+
+        view.when(() => {
+            updateVisibleCounts()
+            view.popupEnabled = false; //disable popups
+            // create the Editor
+            const editor = new Editor({
+                view: view,
+            });
+            // add widget to top-right of the view
+            view.ui.add(editor, "top-right");
+            const sketch = new Sketch({
+                view: view,
+                layer: graphicsLayer,
+                creationMode: "update",
+                availableCreateTools: ["point"],
+                creationMode: "single",
+                defaultCreatOptions: ["freehand"],
+            });
+            view.ui.add(sketch, "bottom-right");
+
+            sketch.on("create", (event) => {
+                // if you wanted to query the trees and heat island data immediately upon placing the sketch point,
+                // code could be added here
+            });
+            let selectedFeature = null;
+            let selectedFeatureCopy = null;
+            // watch for state change of editor
+            editor.viewModel.watch("state", (state) => {
+                if (state == "editing-existing-feature") {
+                    selectedFeature = editor.viewModel.featureFormViewModel.feature;
+                    // only if tree layer selected
+                    if (selectedFeature.layer.title == "Add Trees") {
+                        selectedFeatureCopy = esriLang.clone(
+                            editor.viewModel.featureFormViewModel.feature
+                        );
+                        editor.activeWorkflow.on("commit", () => {
+                            createHeatUpdateQuery(selectedFeatureCopy, "warmer");
+                            createHeatUpdateQuery(selectedFeature, "cooler");
+                        });
+                    }
+                } else if (state == "creating-features") {
+                    // only if tree layer selected
+                    if (editor.viewModel.selectedTemplateItem.layer.title == "Add Trees") {
+                        selectedFeature = null;
+                        selectedFeatureCopy = null;
+                        editor.viewModel.featureFormViewModel.watch("feature", (feature) => {
+                            feature.attributes.Tree_H = 6.0;
+                            selectedFeature = feature;
+                            selectedFeatureCopy = esriLang.clone(feature);
+                        });
+                        editor.activeWorkflow.on("commit", (f) => {
+                            console.warn(999, 'tree', selectedFeature)
+                            createHeatUpdateQuery(selectedFeature, "cooler");
+                        });
+                    }
+                }
+            });
+        });
 
         // Re-query the visible building count whenever the view is moved or zoomed
         view.watch("extent", updateVisibleCounts);
