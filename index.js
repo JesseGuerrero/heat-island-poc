@@ -298,34 +298,71 @@ require([
                     map.add(febVectorLST);
                 }
             }
+            calculateAverageTemperature()
         }
 
         function calculateAverageTemperature() {
+            // Check if the layers are in the map
+            if (!view.map.layers.includes(octVectorLST) && !view.map.layers.includes(febVectorLST)) {
+                // Exit if neither of the layers is in the map
+                return;
+            }
+
             const visibleExtent = view.extent; // Get the current visible extent
 
-            const query = octVectorLST.createQuery();
-            query.geometry = visibleExtent; // Limit query to the visible extent
-            query.outFields = ["gridcode"]; // Only retrieve the 'gridcode' field (temperature)
-            query.returnGeometry = false;   // We don't need the geometry
+            // Query the temperature for octVectorLST if it is present in the map
+            if (view.map.layers.includes(octVectorLST)) {
+                const query = octVectorLST.createQuery();
+                query.geometry = visibleExtent; // Limit query to the visible extent
+                query.outFields = ["gridcode"]; // Only retrieve the 'gridcode' field (temperature)
+                query.returnGeometry = false;   // We don't need the geometry
 
-            octVectorLST.queryFeatures(query).then(function(result) {
-                let totalTemperature = 0;
-                let featureCount = result.features.length;
+                octVectorLST.queryFeatures(query).then(function(result) {
+                    let totalTemperature = 0;
+                    let featureCount = result.features.length;
 
-                // Sum up the temperatures
-                result.features.forEach(function(feature) {
-                    totalTemperature += feature.attributes.gridcode;
+                    // Sum up the temperatures
+                    result.features.forEach(function(feature) {
+                        totalTemperature += feature.attributes.gridcode;
+                    });
+
+                    // Calculate the average temperature
+                    let averageTemperature = featureCount > 0 ? (totalTemperature / featureCount).toFixed(2) : "N/A";
+
+                    // Update the HTML element with the calculated average temperature
+                    document.querySelector("#avgTemperature").innerHTML = averageTemperature + " °F";
+                }).catch(function(error) {
+                    console.error("Error querying features: ", error);
                 });
+            }
 
-                // Calculate the average temperature
-                let averageTemperature = featureCount > 0 ? (totalTemperature / featureCount).toFixed(2) : "N/A";
+            // Query the temperature for febVectorLST if it is present in the map
+            if (view.map.layers.includes(febVectorLST)) {
+                const query = febVectorLST.createQuery();
+                query.geometry = visibleExtent; // Limit query to the visible extent
+                query.outFields = ["gridcode"]; // Only retrieve the 'gridcode' field (temperature)
+                query.returnGeometry = false;   // We don't need the geometry
 
-                // Update the HTML element with the calculated average temperature
-                document.querySelector("#avgTemperature").innerHTML = averageTemperature + " °F";
-            }).catch(function(error) {
-                console.error("Error querying features: ", error);
-            });
+                febVectorLST.queryFeatures(query).then(function(result) {
+                    let totalTemperature = 0;
+                    let featureCount = result.features.length;
+
+                    // Sum up the temperatures
+                    result.features.forEach(function(feature) {
+                        totalTemperature += feature.attributes.gridcode;
+                    });
+
+                    // Calculate the average temperature
+                    let averageTemperature = featureCount > 0 ? (totalTemperature / featureCount).toFixed(2) : "N/A";
+
+                    // Update the HTML element with the calculated average temperature
+                    document.querySelector("#avgTemperature").innerHTML = averageTemperature + " °F";
+                }).catch(function(error) {
+                    console.error("Error querying features: ", error);
+                });
+            }
         }
+
 
         function updateVisibleCounts() {
             const visibleExtent = view.extent;  // Get the current visible extent
