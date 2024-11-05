@@ -13,8 +13,9 @@ require([
     "esri/widgets/Editor",
     "esri/widgets/Sketch",
     "esri/layers/GraphicsLayer",
+    "esri/core/lang",
     "constants.js"
-], function(Map, SceneView, esriRequest, IdentityManager, FeatureLayer, SceneLayer, TileLayer, PolygonSymbol3D, FillSymbol3DLayer, VectorTileLayer, Extent, Editor, Sketch, GraphicsLayer, constants) {
+], function(Map, SceneView, esriRequest, IdentityManager, FeatureLayer, SceneLayer, TileLayer, PolygonSymbol3D, FillSymbol3DLayer, VectorTileLayer, Extent, Editor, Sketch, GraphicsLayer, esriLang, constants) {
 
     // Step 1: Define your ArcGIS Online credentials (for development purposes)
     const username = "jesus.guerrero6_utsa";
@@ -89,7 +90,7 @@ require([
                 {
                     type: "size",
                     axis: "height",
-                    field: "Tree_H",
+                    field: "Tree_Height",
                     valueUnit: "meters",
                 },
             ],
@@ -182,7 +183,6 @@ require([
                 attributes: {
                     OBJECTID: 0,
                     Tree_Height: 0,
-                    Tree_H: 0,
                 },
             },
         ];
@@ -197,10 +197,6 @@ require([
                 },
                 {
                     name: "Tree_Height",
-                    type: "string",
-                },
-                {
-                    name: "Tree_H",
                     type: "double",
                 },
             ],
@@ -410,9 +406,6 @@ require([
                     addFeatures: response.features,
                 };
                 treeClientLayer.applyEdits(edits).then(() => {
-                    for (let i = 0; i < response.features.length; i++) {
-                        // createHeatUpdateQuery(response.features[i], "cooler")
-                    }
                 });
             });
         });
@@ -458,8 +451,7 @@ require([
                             editor.viewModel.featureFormViewModel.feature
                         );
                         editor.activeWorkflow.on("commit", () => {
-                            createHeatUpdateQuery(selectedFeatureCopy, "warmer");
-                            createHeatUpdateQuery(selectedFeature, "cooler");
+
                         });
                     }
                 } else if (state == "creating-features") {
@@ -468,13 +460,12 @@ require([
                         selectedFeature = null;
                         selectedFeatureCopy = null;
                         editor.viewModel.featureFormViewModel.watch("feature", (feature) => {
-                            feature.attributes.Tree_H = 6.0;
+                            feature.attributes.Tree_Height = 15.0;
                             selectedFeature = feature;
                             selectedFeatureCopy = esriLang.clone(feature);
                         });
                         editor.activeWorkflow.on("commit", (f) => {
                             console.warn(999, 'tree', selectedFeature)
-                            createHeatUpdateQuery(selectedFeature, "cooler");
                         });
                     }
                 }
