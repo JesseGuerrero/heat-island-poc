@@ -96,13 +96,6 @@ require([
             ],
         };
 
-        // layer for sketch points
-        const graphicsLayer = new GraphicsLayer({
-            elevationInfo: {
-                mode: "on-the-ground",
-            },
-        });
-
         const buildingsLayer = new SceneLayer({
             portalItem: {
                 id: "5f3bfa18600a41979e989f357f4bcc76",
@@ -136,6 +129,71 @@ require([
             }
         });
 
+        // Define the 3D renderer for the trees in FeatureLayer
+        // const featureTreeRenderer = {
+        //     type: "unique-value", // Use unique-value renderer to differentiate by species
+        //     field: "Name", // Field that contains the species names
+        //     uniqueValueInfos: [
+        //         {
+        //             value: "Common Whitebeam",
+        //             symbol: {
+        //                 type: "web-style",
+        //                 styleName: "EsriLowPolyVegetationStyle",
+        //                 name: "Populus" // Generic placeholder symbol for Common Whitebeam
+        //             }
+        //         },
+        //         {
+        //             value: "European Beech",
+        //             symbol: {
+        //                 type: "web-style",
+        //                 styleName: "EsriLowPolyVegetationStyle",
+        //                 name: "Populus" // Generic placeholder symbol for European Beech
+        //             }
+        //         },
+        //         {
+        //             value: "Northern Red Oak",
+        //             symbol: {
+        //                 type: "web-style",
+        //                 styleName: "EsriLowPolyVegetationStyle",
+        //                 name: "Oak Tree" // Generic placeholder symbol for Northern Red Oak
+        //             }
+        //         },
+        //         {
+        //             value: "Norway Maple",
+        //             symbol: {
+        //                 type: "web-style",
+        //                 styleName: "EsriLowPolyVegetationStyle",
+        //                 name: "Maple Tree" // Generic placeholder symbol for Norway Maple
+        //             }
+        //         },
+        //         {
+        //             value: "Umbrella Acacia",
+        //             symbol: {
+        //                 type: "web-style",
+        //                 styleName: "EsriLowPolyVegetationStyle",
+        //                 name: "Acacia Tree" // Generic placeholder symbol for Umbrella Acacia
+        //             }
+        //         }
+        //     ],
+        //     defaultSymbol: {
+        //         type: "web-style",
+        //         styleName: "EsriLowPolyVegetationStyle",
+        //         name: "Tree" // Fallback symbol for other species
+        //     },
+        //     visualVariables: [
+        //         {
+        //             type: "size", // Size visual variable to scale height
+        //             field: "Tree_Height", // Field containing height data
+        //             axis: "height",
+        //             valueUnit: "meters" // Units for height
+        //         }
+        //     ]
+        // };
+
+        // Apply the renderer to treesLayer
+        // treesLayer.renderer = featureTreeRenderer;
+
+
         // Create the 3D symbol for the polygons
         const polygonSymbol3D = new PolygonSymbol3D({
             symbolLayers: [
@@ -148,28 +206,6 @@ require([
                 })
             ]
         });
-
-
-        // initial building feature to initialaise heat island points client layer
-        let heatIslandfeatures = [
-            {
-                geometry: {
-                    type: "point",
-                    x: 172.639847,
-                    y: -43.52565,
-                    z: 30,
-                },
-                attributes: {
-                    ObjectID: 1,
-                    grid_code: 1,
-                    pointid: 1,
-                    MERGE_SRC: "1",
-                    mergeSrc: 1,
-                    heatValue: 1,
-                    heatValueSimplified: 1,
-                },
-            },
-        ];
 
         // initial building feature to initialaise tree client layer
         let treeFeatures = [
@@ -187,7 +223,7 @@ require([
             },
         ];
 
-        let treeClientLayer = new FeatureLayer({
+        let treeClientLayer = new GraphicsLayer({
             title: "Add Trees",
             source: treeFeatures,
             fields: [
@@ -249,17 +285,6 @@ require([
                 token: token
             },
             opacity: 0.5
-        });
-
-        var treeLayer = new FeatureLayer({
-            portalItem: {
-                id: "72c9f18c98f047a2815972b9b1628a84",
-            },
-            // url: "https://services.arcgis.com/hLRlshaEMEYQG5A8/arcgis/rest/services/HamiltonTreesWithRemovedFeatures/FeatureServer",
-            renderer: treeRenderer,
-            elevationInfo: {
-                mode: "on-the-ground",
-            },
         });
 
         window.handleLSTChange = function handleLSTChange() {
@@ -389,87 +414,66 @@ require([
             calculateAverageTemperature();
         }
 
-        let treeBtn = document.querySelector("#addTrees");
-        treeBtn.addEventListener("click", (event) => {
-            // tree query
-            let treeQuery = treeLayer.createQuery();
-            treeQuery.geometry =
-                graphicsLayer.graphics.items[
-                graphicsLayer.graphics.items.length - 1
-                    ].geometry;
-            treeQuery.distance = 50;
-            treeQuery.units = "meters";
-            treeQuery.spatialRelationship = "intersects"; // this is the default
-            treeQuery.returnGeometry = true;
-            treeLayer.queryFeatures(treeQuery).then(function (response) {
-                const edits = {
-                    addFeatures: response.features,
-                };
-                treeClientLayer.applyEdits(edits).then(() => {
-                });
-            });
-        });
-
         map.add(buildingsLayer);
         map.add(treesLayer);
         map.add(octVectorLST);
         map.add(rasterOctTileLayer);
         map.add(threeDBuildingMesh);
 
-        view.when(() => {
-            updateVisibleCounts()
-            view.popupEnabled = false; //disable popups
-            // create the Editor
-            const editor = new Editor({
-                view: view,
-            });
-            // add widget to top-right of the view
-            view.ui.add(editor, "top-right");
-            const sketch = new Sketch({
-                view: view,
-                layer: graphicsLayer,
-                creationMode: "update",
-                availableCreateTools: ["point"],
-                creationMode: "single",
-                defaultCreatOptions: ["freehand"],
-            });
-            view.ui.add(sketch, "bottom-right");
+// Initialize the Sketch widget for feature creation
+        const sketch = new Sketch({
+            view: view,
+            layer: treeClientLayer,
+            visibleElements: {
+                selectionTools: false,
+                settingsMenu: false,
+                undoRedoMenu: true
+            }
+        });
 
+// Hide the Sketch widget from the UI until "Add Trees" button is clicked
+        view.ui.add(sketch, "top-right");
+        sketch.container.style.display = "none"; // Initially hide the Sketch widget
+
+// Function to start creating a new tree feature when "Add Trees" button is clicked
+        function startCreatingFeature() {
+            view.popupEnabled = false; // Disable popups
+
+            // Show the Sketch widget to enable adding features
+            // sketch.container.style.display = "block"; // Show Sketch widget
+            sketch.create("point"); // Set Sketch to add point features
+
+            // Listen for feature creation
             sketch.on("create", (event) => {
-                // if you wanted to query the trees and heat island data immediately upon placing the sketch point,
-                // code could be added here
-            });
-            let selectedFeature = null;
-            let selectedFeatureCopy = null;
-            // watch for state change of editor
-            editor.viewModel.watch("state", (state) => {
-                if (state == "editing-existing-feature") {
-                    selectedFeature = editor.viewModel.featureFormViewModel.feature;
-                    // only if tree layer selected
-                    if (selectedFeature.layer.title == "Add Trees") {
-                        selectedFeatureCopy = esriLang.clone(
-                            editor.viewModel.featureFormViewModel.feature
-                        );
-                        editor.activeWorkflow.on("commit", () => {
+                if (event.state === "complete") {
+                    const graphic = event.graphic;
+                    if (graphic) {
+                        // Set default Tree Height
+                        graphic.attributes = graphic.attributes || {};
+                        graphic.attributes.Tree_Height = 15.0;
+                        graphic.symbol = treeRenderer.symbol;
 
-                        });
-                    }
-                } else if (state == "creating-features") {
-                    // only if tree layer selected
-                    if (editor.viewModel.selectedTemplateItem.layer.title == "Add Trees") {
-                        selectedFeature = null;
-                        selectedFeatureCopy = null;
-                        editor.viewModel.featureFormViewModel.watch("feature", (feature) => {
-                            feature.attributes.Tree_Height = 15.0;
-                            selectedFeature = feature;
-                            selectedFeatureCopy = esriLang.clone(feature);
-                        });
-                        editor.activeWorkflow.on("commit", (f) => {
-                            console.warn(999, 'tree', selectedFeature)
-                        });
+                        // Add graphic to the treeClientLayer
+                        treeClientLayer.add(graphic);
+
+                        console.log("Added new tree feature with default Tree Height of 15.0 meters.");
                     }
                 }
             });
+        }
+
+        document.getElementById("addTrees").addEventListener("click", startCreatingFeature);
+
+        function stopSketch() {
+            sketch.cancel();  // Cancel any ongoing Sketch operation
+        }
+
+        // Event listener to remove Sketch functionality when "Cursor" button is clicked
+        document.getElementById("cursor").addEventListener("click", stopSketch);
+
+        view.when(() => {
+            updateVisibleCounts()
+            view.popupEnabled = false; //disable popups
         });
 
         // Re-query the visible building count whenever the view is moved or zoomed
