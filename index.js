@@ -253,7 +253,7 @@ require([
 
         const rasterFebTileLayer = new TileLayer({
             portalItem: {
-                id: "df92570bf5ca49ee84c6629aff979a3a",
+                id: "d3f31dc16c284a57bb83aacf16436b30",
                 token: token
             },
             opacity: 0.5
@@ -261,7 +261,7 @@ require([
 
         const febVectorLST = new FeatureLayer({
             portalItem: {
-                id: "aa3c051544a9470b9fef5dfd66f872bb",
+                id: "d9fd2cea9ef34c7193249f27fa28384c",
                 token: token
             },
             popupTemplate: popupTemplate,
@@ -269,9 +269,9 @@ require([
             opacity: 0.5
         });
 
-        const octVectorLST = new FeatureLayer({
+        const sepVectorLST = new FeatureLayer({
             portalItem: {
-                id: "cb3e63d1a69e44239d149a5078b8e264",
+                id: "9a443e86eac245139604c937c3cd4143",
                 token: token
             },
             popupTemplate: popupTemplate,
@@ -281,7 +281,7 @@ require([
 
         const rasterOctTileLayer = new TileLayer({
             portalItem: {
-                id: "a1f2a60c2fc44eadb8fcdb693d6c59d7",
+                id: "4476c655db854d7c96247e97f17acf83",
                 token: token
             },
             opacity: 0.5
@@ -302,15 +302,15 @@ require([
                 if (!map.layers.includes(rasterOctTileLayer)) {
                     map.add(rasterOctTileLayer);
                 }
-                if (!map.layers.includes(octVectorLST)) {
-                    map.add(octVectorLST);
+                if (!map.layers.includes(sepVectorLST)) {
+                    map.add(sepVectorLST);
                 }
             } else if (selectedValue == 2) {  // Feb 2024 selected
                 if (map.layers.includes(rasterOctTileLayer)) {
                     map.remove(rasterOctTileLayer);
                 }
-                if (map.layers.includes(octVectorLST)) {
-                    map.remove(octVectorLST);
+                if (map.layers.includes(sepVectorLST)) {
+                    map.remove(sepVectorLST);
                 }
                 if (!map.layers.includes(rasterFebTileLayer)) {
                     map.add(rasterFebTileLayer);
@@ -324,7 +324,7 @@ require([
 
         function calculateAverageTemperature() {
             // Check if the layers are in the map
-            if (!view.map.layers.includes(octVectorLST) && !view.map.layers.includes(febVectorLST)) {
+            if (!view.map.layers.includes(sepVectorLST) && !view.map.layers.includes(febVectorLST)) {
                 // Exit if neither of the layers is in the map
                 return;
             }
@@ -332,13 +332,13 @@ require([
             const visibleExtent = view.extent; // Get the current visible extent
 
             // Query the temperature for octVectorLST if it is present in the map
-            if (view.map.layers.includes(octVectorLST)) {
-                const query = octVectorLST.createQuery();
+            if (view.map.layers.includes(sepVectorLST)) {
+                const query = sepVectorLST.createQuery();
                 query.geometry = visibleExtent; // Limit query to the visible extent
                 query.outFields = ["gridcode"]; // Only retrieve the 'gridcode' field (temperature)
                 query.returnGeometry = false;   // We don't need the geometry
 
-                octVectorLST.queryFeatures(query).then(function(result) {
+                sepVectorLST.queryFeatures(query).then(function(result) {
                     let totalTemperature = 0;
                     let featureCount = result.features.length;
 
@@ -416,7 +416,7 @@ require([
 
         map.add(buildingsLayer);
         map.add(treesLayer);
-        map.add(octVectorLST);
+        map.add(sepVectorLST);
         map.add(rasterOctTileLayer);
         map.add(threeDBuildingMesh);
 
