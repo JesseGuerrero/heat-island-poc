@@ -79,11 +79,11 @@ require([
         };
 
         const treeRenderer = {
-            type: "simple", // autocasts as new SimpleRenderer()
+            type: "simple",
             symbol: {
-                type: "web-style", // autocasts as new WebStyleSymbol()
+                type: "web-style",
                 styleName: "EsriLowPolyVegetationStyle",
-                name: "Populus",
+                name: "Populus"
             },
             label: "generic tree",
             visualVariables: [
@@ -91,14 +91,25 @@ require([
                     type: "size",
                     axis: "height",
                     field: "Tree_Height",
-                    valueUnit: "meters",
-                },
-            ],
+                    valueUnit: "meters"
+                }
+            ]
         };
 
         const buildingsLayer = new SceneLayer({
             portalItem: {
                 id: "5f3bfa18600a41979e989f357f4bcc76",
+                token: token
+            },
+            elevationInfo: {
+                mode: "absolute-height",
+                offset: 0
+            }
+        });
+
+        const buildingsWestLayer = new SceneLayer({
+            portalItem: {
+                id: "93bb781426864219981e94aab54f6afc",
                 token: token
             },
             elevationInfo: {
@@ -118,7 +129,6 @@ require([
             }
         });
 
-
         const treesLayer = new SceneLayer({
             portalItem: {
                 id: "93a464a8aa4d4d56b86ce6268bf0a788",
@@ -127,6 +137,50 @@ require([
             elevationInfo: {
                 mode: "on-the-ground"
             }
+        });
+
+        const treesWestLayer = new SceneLayer({
+            portalItem: {
+                id: "72213be6102f4d4da2a83328e0ab86b3",
+                token: token
+            },
+            elevationInfo: {
+                mode: "on-the-ground"
+            }
+        });
+
+        const rasterFebTileLayer = new TileLayer({
+            portalItem: {
+                id: "d3f31dc16c284a57bb83aacf16436b30",
+                token: token
+            },
+            opacity: 0.5
+        });
+
+        const febVectorLST = new FeatureLayer({
+            portalItem: {
+                id: "d9fd2cea9ef34c7193249f27fa28384c",
+                token: token
+            },
+            popupTemplate: popupTemplate,
+            opacity: 0.5
+        });
+
+        const sepVectorLST = new FeatureLayer({
+            portalItem: {
+                id: "9a443e86eac245139604c937c3cd4143",
+                token: token
+            },
+            popupTemplate: popupTemplate,
+            opacity: 0.5
+        });
+
+        const rasterOctTileLayer = new TileLayer({
+            portalItem: {
+                id: "4476c655db854d7c96247e97f17acf83",
+                token: token
+            },
+            opacity: 0.5
         });
 
         // Define the 3D renderer for the trees in FeatureLayer
@@ -245,48 +299,6 @@ require([
         });
         view.map.add(treeClientLayer);
 
-        // Define the renderer for the FeatureLayer
-        const renderer = {
-            type: "simple", // Use simple renderer
-            symbol: polygonSymbol3D // Apply the 3D symbol to all features in the layer
-        };
-
-        const rasterFebTileLayer = new TileLayer({
-            portalItem: {
-                id: "d3f31dc16c284a57bb83aacf16436b30",
-                token: token
-            },
-            opacity: 0.5
-        });
-
-        const febVectorLST = new FeatureLayer({
-            portalItem: {
-                id: "d9fd2cea9ef34c7193249f27fa28384c",
-                token: token
-            },
-            popupTemplate: popupTemplate,
-            renderer: renderer,
-            opacity: 0.5
-        });
-
-        const sepVectorLST = new FeatureLayer({
-            portalItem: {
-                id: "9a443e86eac245139604c937c3cd4143",
-                token: token
-            },
-            popupTemplate: popupTemplate,
-            renderer: renderer,
-            opacity: 0.5
-        });
-
-        const rasterOctTileLayer = new TileLayer({
-            portalItem: {
-                id: "4476c655db854d7c96247e97f17acf83",
-                token: token
-            },
-            opacity: 0.5
-        });
-
         window.handleLSTChange = function handleLSTChange() {
             const lstSelect = document.getElementById("selectLST");
             const selectedValue = lstSelect.value;
@@ -385,37 +397,84 @@ require([
         }
 
 
-        function updateVisibleCounts() {
-            const visibleExtent = view.extent;  // Get the current visible extent
-
-            // Query visible building count
-            const buildingQuery = buildingsLayer.createQuery();
-            buildingQuery.geometry = visibleExtent;
-            buildingQuery.spatialRelationship = "intersects";
-
-            buildingsLayer.queryFeatureCount(buildingQuery).then(function(visibleBuildingCount) {
-                // Update the building count in the HTML
-                document.querySelector("#buildingCount").innerHTML = visibleBuildingCount;
-            }).catch(function(error) {
-                console.error("Error querying visible building count: ", error);
-            });
-
-            // Query visible tree count
-            const treeQuery = treesLayer.createQuery();
-            treeQuery.geometry = visibleExtent;
-            treeQuery.spatialRelationship = "intersects";
-
-            treesLayer.queryFeatureCount(treeQuery).then(function(visibleTreeCount) {
-                // Update the tree count in the HTML
-                document.querySelector("#treeCount").innerHTML = visibleTreeCount;
-            }).catch(function(error) {
-                console.error("Error querying visible tree count: ", error);
-            });
-            calculateAverageTemperature();
+        // Debounce function to limit frequency of updates
+        function debounce(func, delay) {
+            let timer;
+            return function (...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => func.apply(this, args), delay);
+            };
         }
 
+        // Function to update visible counts
+        function updateVisibleCounts() {
+            calculateAverageTemperature()
+            const visibleExtent = view.extent;  // Get the current visible extent
+            let treeCount = 0;
+            let buildingCount = 0;
+
+            // Create promises for querying visible counts
+            const buildingWestPromise = buildingsWestLayer.queryFeatureCount({
+                geometry: visibleExtent,
+                spatialRelationship: "intersects"
+            });
+
+            const treeWestPromise = treesWestLayer.queryFeatureCount({
+                geometry: visibleExtent,
+                spatialRelationship: "intersects"
+            });
+
+            const buildingPromise = buildingsLayer.queryFeatureCount({
+                geometry: visibleExtent,
+                spatialRelationship: "intersects"
+            });
+
+            const treePromise = treesLayer.queryFeatureCount({
+                geometry: visibleExtent,
+                spatialRelationship: "intersects"
+            });
+
+            // Use Promise.all to wait for all queries to complete
+            Promise.all([buildingWestPromise, treeWestPromise, buildingPromise, treePromise])
+                .then(([visibleBuildingWestCount, visibleTreeWestCount, visibleBuildingCount, visibleTreeCount]) => {
+                    // Update the counts
+                    buildingCount = visibleBuildingWestCount + visibleBuildingCount;
+                    treeCount = visibleTreeWestCount + visibleTreeCount;
+
+                    // Update the HTML elements if the counts are non-zero
+                    if (buildingCount !== 0) {
+                        document.querySelector("#buildingCount").innerHTML = buildingCount;
+                    }
+                    if (treeCount !== 0) {
+                        document.querySelector("#treeCount").innerHTML = treeCount;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error querying visible counts: ", error);
+                });
+        }
+
+        // Debounce the `updateVisibleCounts` function
+        const debouncedUpdateVisibleCounts = debounce(updateVisibleCounts, 300);
+
+        // Ensure all layers are loaded before updating counts
+        Promise.all([
+            buildingsWestLayer.when(),
+            treesWestLayer.when(),
+            buildingsLayer.when(),
+            treesLayer.when()
+        ]).then(() => {
+            // Layers are loaded, proceed to update counts
+            updateVisibleCounts();
+            view.watch("extent", debouncedUpdateVisibleCounts);  // Watch for extent changes
+        }).catch(error => {
+            console.error("Error loading layers: ", error);
+        });
+
         map.add(buildingsLayer);
+        map.add(buildingsWestLayer);
         map.add(treesLayer);
+        map.add(treesWestLayer);
         map.add(sepVectorLST);
         map.add(rasterOctTileLayer);
         map.add(threeDBuildingMesh);
