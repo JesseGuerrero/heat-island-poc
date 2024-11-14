@@ -9,7 +9,7 @@ require([
     "esri/widgets/Sketch",
     "esri/layers/GraphicsLayer",
     "esri/widgets/TimeSlider",
-    "constants.js"  // Add path to your constants module
+    "util.js"  // Add path to your constants module
 ], (
     Map,
     SceneView,

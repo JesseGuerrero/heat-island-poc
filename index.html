@@ -29,12 +29,10 @@
         right: 0;
       }
     </style>
-
     <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css" />
-    <script src="https://js.arcgis.com/4.26/"></script>
+    <script src="https://js.arcgis.com/4.31/"></script>
     <script src="index.js"></script>
   </head>
-
   <body>
     <div id="header" style="vertical-align: middle; margin-top: -20; padding-left: 15; font-size: 1.1em;">
       SATX 2024 - Heat Island Simulator
@@ -47,31 +45,19 @@
               id="cursor"
               value="Cursor"
       />
-<!--      <input-->
-<!--              class="esri-component esri-widget esri-interactive"-->
-<!--              type="button"-->
-<!--              id="removeTrees"-->
-<!--              value="Remove Tree"-->
-<!--      />-->
       <input
         class="esri-component esri-widget esri-interactive"
         type="button"
         id="addTrees"
         value="Add Tree"
       />
+      <input
+              class="esri-component esri-widget esri-interactive"
+              type="button"
+              id="reset"
+              value="Reset"
+      />
       <br>
-<!--      <input-->
-<!--              class="esri-component esri-widget esri-interactive"-->
-<!--              type="button"-->
-<!--              id="load"-->
-<!--              value="Load"-->
-<!--      />-->
-<!--      <input-->
-<!--              class="esri-component esri-widget esri-interactive"-->
-<!--              type="button"-->
-<!--              id="save"-->
-<!--              value="Save"-->
-<!--      />-->
     </div>
     <div id="paneDiv" class="esri-widget">
       <b>View Statistics:</b><br>
@@ -81,25 +67,25 @@
       <br>
       <b>LST Date</b>
       <br>
-      <select onchange="handleLSTChange()" id="selectLST" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
+      <select id="selectLST" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
         <option value=1>Sep 2024</option>
         <option value=2>Feb 2024</option>
-<!--        <option value=3>March 2024</option>-->
+        <!--        <option value=3>March 2024</option>-->
       </select>
-<!--      <b>Tree Year</b>-->
-<!--      <br>-->
-<!--      <select id="selectTreePopulus" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">-->
-<!--        <option value=1>2021</option>-->
-<!--        <option value=2>2019</option>-->
-<!--        <option value=3>2017</option>-->
-<!--      </select>-->
-<!--      <b>Building Year</b>-->
-<!--      <br>-->
-<!--      <select id="selectBuildingPopulos" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">-->
-<!--        <option value=1>2021</option>-->
-<!--        <option value=2>2019</option>-->
-<!--        <option value=3>2017</option>-->
-<!--      </select>-->
+      <!--      <b>Tree Year</b>-->
+      <!--      <br>-->
+      <!--      <select id="selectTreePopulus" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">-->
+      <!--        <option value=1>2021</option>-->
+      <!--        <option value=2>2019</option>-->
+      <!--        <option value=3>2017</option>-->
+      <!--      </select>-->
+      <!--      <b>Building Year</b>-->
+      <!--      <br>-->
+      <!--      <select id="selectBuildingPopulos" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">-->
+      <!--        <option value=1>2021</option>-->
+      <!--        <option value=2>2019</option>-->
+      <!--        <option value=3>2017</option>-->
+      <!--      </select>-->
     </div>
   </body>
 </html>
