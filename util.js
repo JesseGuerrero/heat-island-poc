@@ -52,7 +52,7 @@ define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layer
             });
 
             const popupTemplate = {
-                title: "Grid Information",
+                title: "Weather",
                 content: [{
                     type: "fields",
                     fieldInfos: [{

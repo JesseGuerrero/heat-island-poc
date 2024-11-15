@@ -54,12 +54,13 @@ require([
     });
     const immutableFebLSTVectorLayer = new FeatureLayer({
       portalItem: {
-        id: "d129f34b746846dda6debd89c55cf3f3"
+        id: "4d6205881d4e4dbda4a2735046edfd20"
       }
     });
     const mutableFebLSTVectorLayer = new FeatureLayer({
       portalItem: {
-        id: "630f2470acb14d599c6f9993d1d73d1a"
+        id: "fbd5f1203df44c8c8fb4c17e668dfa22"
+
       }
     });
     Util.map.add(mutableSepLSTVectorLayer);
@@ -117,6 +118,7 @@ require([
     }
     document.getElementById("reset").addEventListener("click", async () => {
       await Util.resetByUpdateFeatureLayer(getLSTLayers()[0], getLSTLayers()[1]);
+      await Util.resetByUpdateFeatureLayer(getNotLSTLayers()[0], getNotLSTLayers()[1]);
       await Util.deleteTreeNullFeatureLayer(immutableTreesLayer, mutableTreesLayer);
     });
     document.getElementById("addTrees").addEventListener("click", startCreatingFeature);
@@ -183,6 +185,9 @@ require([
       updateVisibleCounts()
       Util.view.popupEnabled = true; //disable popups
     });
+
+
+
 
     // Re-query the visible building count whenever the view is moved or zoomed
     Util.view.watch("extent", updateVisibleCounts);
