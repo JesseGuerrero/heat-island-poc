@@ -2,10 +2,11 @@ require([
   "esri/layers/FeatureLayer",
   "esri/layers/GraphicsLayer",
   "esri/layers/SceneLayer",
+  "esri/layers/TileLayer",
   "esri/request",
   "util.js",
   "auth.js"
-], function(FeatureLayer, GraphicsLayer, SceneLayer, esriRequest, Util, Auth) {
+], function(FeatureLayer, GraphicsLayer, SceneLayer, TileLayer, esriRequest, Util, Auth) {
   async function main() {
     const token = await Auth.initToken();
     const buildingsLayer = new SceneLayer({
@@ -38,6 +39,14 @@ require([
         offset: 0
       }
     });
+
+    const lcz = new TileLayer({
+      portalItem: {
+        id: "55e9d9daabda4f5bbb8838840e0c43b7",
+        token: Util.token
+      },
+      opacity: 0.5
+    });
     Util.map.add(buildingsLayer);
     Util.map.add(buildingsWestLayer);
     Util.map.add(threeDBuildingMesh);
@@ -60,7 +69,6 @@ require([
     const mutableFebLSTVectorLayer = new FeatureLayer({
       portalItem: {
         id: "fbd5f1203df44c8c8fb4c17e668dfa22"
-
       }
     });
     Util.map.add(mutableSepLSTVectorLayer);
@@ -78,8 +86,9 @@ require([
     });
     document.getElementById("selectLST").addEventListener("change", function() {
       const value = event.target.value;
-      Util.handleLSTChange(value, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer);
-      Util.calculateAverageTemperature(getLSTLayers()[1])
+      Util.handleLSTChange(value, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer, lcz);
+      if(value != 3)
+        Util.calculateAverageTemperature(getLSTLayers()[1])
     });
 
     const immutableTreesLayer = new FeatureLayer({

@@ -329,17 +329,21 @@ define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layer
         if (map.layers.includes(sep)) {
             return [imSep, sep]
         }
+        else return [imSep, sep]
     }
 
     function getNotCurrentLSTLayer(imFeb, imSep, feb, sep) {
         return getCurrentLSTLayer(imSep, imFeb, sep, feb);
     }
 
-    function handleLSTChange(value, feb, sep) {
+    function handleLSTChange(value, feb, sep, lcz) {
         const lstSelect = document.getElementById("selectLST");
         const selectedValue = lstSelect.value;
 
         if (selectedValue == 1) {  // Sep 2024 selected
+            if (map.layers.includes(lcz)) {
+                map.remove(lcz);
+            }
             if (map.layers.includes(feb)) {
                 map.remove(feb);
             }
@@ -347,11 +351,24 @@ define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layer
                 map.add(sep);
             }
         } else if (selectedValue == 2) {  // Feb 2024 selected
+            if (map.layers.includes(lcz)) {
+                map.remove(lcz);
+            }
             if (map.layers.includes(sep)) {
                 map.remove(sep);
             }
             if (!map.layers.includes(feb)) {
                 map.add(feb);
+            }
+        } else if(selectedValue == 3) {
+            if (map.layers.includes(sep)) {
+                map.remove(sep);
+            }
+            if (map.layers.includes(feb)) {
+                map.remove(feb);
+            }
+            if (!map.layers.includes(lcz)) {
+                map.add(lcz);
             }
         }
     }
