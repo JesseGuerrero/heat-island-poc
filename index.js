@@ -112,23 +112,39 @@ require([
     Util.sketch.container.style.display = "none"; // Initially hide the Sketch widget
     function startCreatingFeature() {
       Util.sketch.create("point");
+
       Util.sketch.on("create", async (event) => {
         if (event.state === "complete") {
           const graphic = event.graphic;
+
           if (graphic) {
-            await Util.addTreeOnGraphic(graphic, mutableTreesLayer);
-            await Util.reduceTemperatureAroundGraphic(graphic, getLSTLayers()[1], 30, 1)
-            await Util.reduceTemperatureAroundGraphic(graphic, getLSTLayers()[1], 60, 1)
-            await Util.reduceTemperatureAroundGraphic(graphic, getNotLSTLayers()[1], 30, 1)
-            await Util.reduceTemperatureAroundGraphic(graphic, getNotLSTLayers()[1], 60, 1)
+            // Show the loading overlay
+            Util.showLoading();
+
+            try {
+              // Perform async operations
+              await Util.addTreeOnGraphic(graphic, mutableTreesLayer);
+              await Util.reduceTemperatureAroundGraphic(graphic, getLSTLayers()[1], 30, 1);
+              await Util.reduceTemperatureAroundGraphic(graphic, getLSTLayers()[1], 60, 1);
+              await Util.reduceTemperatureAroundGraphic(graphic, getNotLSTLayers()[1], 30, 1);
+              await Util.reduceTemperatureAroundGraphic(graphic, getNotLSTLayers()[1], 60, 1);
+            } catch (error) {
+              console.error("Error during feature creation:", error);
+            } finally {
+              // Hide the loading overlay
+              Util.hideLoading();
+            }
           }
         }
       });
     }
+
     document.getElementById("reset").addEventListener("click", async () => {
+      Util.showLoading();
       await Util.resetByUpdateFeatureLayer(getLSTLayers()[0], getLSTLayers()[1]);
       await Util.resetByUpdateFeatureLayer(getNotLSTLayers()[0], getNotLSTLayers()[1]);
       await Util.deleteTreeNullFeatureLayer(immutableTreesLayer, mutableTreesLayer);
+      Util.hideLoading();
     });
     document.getElementById("addTrees").addEventListener("click", startCreatingFeature);
     document.getElementById("cursor").addEventListener("click", Util.stopSketch);

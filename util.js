@@ -1,7 +1,15 @@
 // util.js
 define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layers/GraphicsLayer",],
     function (Map, SceneView, Sketch, GraphicsLayer) {
+    function showLoading() {
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        loadingOverlay.style.display = "block"; // Show overlay
+    }
 
+    function hideLoading() {
+        const loadingOverlay = document.getElementById("loadingOverlay");
+        loadingOverlay.style.display = "none"; // Hide overlay
+    }
     // Function to generate a color ramp based on normalized value
     function colorRampPrediction(min, max, value) {
         // Normalize value between 0 and 1
@@ -432,6 +440,8 @@ define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layer
         handleLSTChange: handleLSTChange,
         getNotCurrentLSTLayer: getNotCurrentLSTLayer,
         debounce: debounce,
-        calculateAverageTemperature: calculateAverageTemperature
+        calculateAverageTemperature: calculateAverageTemperature,
+        showLoading: showLoading,
+        hideLoading: hideLoading
     };
 });
