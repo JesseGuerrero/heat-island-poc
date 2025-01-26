@@ -71,7 +71,7 @@ require([
         id: "fbd5f1203df44c8c8fb4c17e668dfa22"
       }
     });
-    Util.map.add(mutableSepLSTVectorLayer);
+    // Util.map.add(mutableSepLSTVectorLayer);
     function getLSTLayers() {
       return Util.getCurrentLSTLayer(immutableFebLSTVectorLayer, immutableSepLSTVectorLayer, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer);
     }
@@ -86,10 +86,34 @@ require([
     });
     document.getElementById("selectLST").addEventListener("change", function() {
       const value = event.target.value;
-      Util.handleLSTChange(value, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer, lcz);
+      Util.handleLSTChange(mutableFebLSTVectorLayer, mutableSepLSTVectorLayer, lcz);
       if(value != 3)
         Util.calculateAverageTemperature(getLSTLayers()[1])
     });
+
+    //Toggle UHI
+    const cityService = document.getElementById('cityService');
+    const uhiService = document.getElementById('uhiService');
+    const paneDiv = document.getElementById('paneDiv');
+    const infoDiv = document.getElementById('infoDiv');
+    const selectLST = document.getElementById('selectLST');
+    const title = document.getElementById('title');
+    cityService.addEventListener('click', () => {
+      paneDiv.style.display = "none";
+      infoDiv.style.display = "none";
+      title.innerText = "SATX 2024 - 3D City"
+      Util.map.remove(Util.getCurrentLSTLayer(immutableFebLSTVectorLayer, immutableSepLSTVectorLayer, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer))
+    })
+
+    uhiService.addEventListener('click', () => {
+      title.innerText = "SATX 2024 - Heat Island"
+      paneDiv.style.display = "block";
+      infoDiv.style.display = "block";
+      value = selectLST.value;
+      Util.handleLSTChange(mutableFebLSTVectorLayer, mutableSepLSTVectorLayer, lcz);
+      if(value != 3)
+        Util.calculateAverageTemperature(getLSTLayers()[1])
+    })
 
     const immutableTreesLayer = new FeatureLayer({
       portalItem: {

@@ -256,9 +256,9 @@ define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layer
         zoom: 18,
         camera: {
             position: {
-                x: -98.4957,
-                y: 29.4135,
-                z: 400
+                x: -98.4830,
+                y: 29.4078,
+                z: 800
             },
             tilt: 65
         }
@@ -344,7 +344,7 @@ define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layer
         return getCurrentLSTLayer(imSep, imFeb, sep, feb);
     }
 
-    function handleLSTChange(value, feb, sep, lcz) {
+    function handleLSTChange(feb, sep, lcz) {
         const lstSelect = document.getElementById("selectLST");
         const selectedValue = lstSelect.value;
 
