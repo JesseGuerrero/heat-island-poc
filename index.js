@@ -102,7 +102,7 @@ require([
       paneDiv.style.display = "none";
       infoDiv.style.display = "none";
       title.innerText = "SATX 2024 - 3D City"
-      Util.map.remove(Util.getCurrentLSTLayer(immutableFebLSTVectorLayer, immutableSepLSTVectorLayer, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer))
+      Util.map.remove(Util.getCurrentLSTLayer(immutableFebLSTVectorLayer, immutableSepLSTVectorLayer, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer)[1])
     })
 
     uhiService.addEventListener('click', () => {
