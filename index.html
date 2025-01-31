@@ -573,6 +573,16 @@
   // Function to restore the original content of viewDiv
   function restoreViewDiv() {
     viewDiv.innerHTML = originalViewDivContent;
+
+    // Reload external JS file (index.js)
+    const oldScript = document.querySelector('script[src="index.js"]');
+    if (oldScript) {
+      oldScript.remove(); // Remove existing script
+    }
+    const newScript = document.createElement('script');
+    newScript.src = 'index.js'; // Reload your script
+    newScript.onload = () => console.log("index.js reloaded successfully.");
+    document.body.appendChild(newScript);
   }
 
   // Event listener for Flooding Service
