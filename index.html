@@ -564,7 +564,38 @@
     viewDiv.style.width = '100%'; // Reset viewDiv width
   });
 
+  const floodingServiceLink = document.querySelector('a[href="#option4"]'); // Flooding Service link
+  const allServiceLinks = document.querySelectorAll('.sidebar-content a'); // All sidebar service links
 
+  // Store the original content of viewDiv for restoration
+  const originalViewDivContent = viewDiv.innerHTML;
+
+  // Function to restore the original content of viewDiv
+  function restoreViewDiv() {
+    viewDiv.innerHTML = originalViewDivContent;
+  }
+
+  // Event listener for Flooding Service
+  floodingServiceLink.addEventListener('click', (event) => {
+    event.preventDefault(); // Prevent default anchor behavior
+
+    // Replace viewDiv content with an iframe
+    viewDiv.innerHTML = `
+      <iframe src="https://dt-demo.prd.it.unity3d.com/"
+              width="100%"
+              height="100%"
+              style="border: none;">
+      </iframe>`;
+  });
+
+  allServiceLinks.forEach(link => {
+    if (link !== floodingServiceLink) { // Exclude Flooding Service link
+      link.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevent default anchor behavior
+        restoreViewDiv(); // Restore original viewDiv content
+      });
+    }
+  });
 </script>
 </body>
 </html>
