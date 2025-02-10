@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Flood Simulation</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.27/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.27/"></script>
+  <style>
+    html, body, #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+<div id="viewDiv"></div>
+<script>
+  require([
+    "esri/Map",
+    "esri/views/SceneView",
+    "esri/layers/ElevationLayer",
+    "esri/layers/GraphicsLayer",
+    "esri/Graphic",
+    "esri/geometry/Polygon",
+    "esri/geometry/geometryEngine",
+    "esri/geometry/projection",
+    "esri/geometry/SpatialReference"
+  ], function (Map, SceneView, ElevationLayer, GraphicsLayer, Graphic, Polygon, geometryEngine, projection, SpatialReference) {
+
+    // Load the projection engine
+    projection.load().then(() => {
+
+      // Create a 3D Map with a basemap
+      const map = new Map({
+        basemap: "topo-vector",
+        ground: {
+          layers: [
+            new ElevationLayer({
+              url: "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"
+            })
+          ]
+        }
+      });
+
+      // Create a SceneView
+      const view = new SceneView({
+        container: "viewDiv",
+        map: map,
+        center: [-98.4936, 29.426],
+        zoom: 18,
+        camera: {
+          position: {
+            x: -98.4830,
+            y: 29.4078,
+            z: 800
+          },
+          tilt: 65
+        }
+      });
+
+      // GraphicsLayer for water simulation
+      const waterLayer = new GraphicsLayer();
+      map.add(waterLayer);
+
+      // Define an area for flooding (replace with your own geometry)
+      const floodArea = new Polygon({
+        rings: [
+          [-99, 29],
+          [-99, 30],
+          [-98, 30],
+          [-98, 29],
+          [-99, 29]
+        ],
+        spatialReference: { wkid: 4326 } // WGS 84 spatial reference
+      });
+
+      // Function to create a water surface graphic
+      function createWaterGraphic(height) {
+        // Project the floodArea to Web Mercator (EPSG: 3857) for linear measurements
+        const projectedFloodArea = projection.project(
+                floodArea,
+                new SpatialReference({ wkid: 3857 }) // Web Mercator spatial reference
+        );
+
+        if (!projectedFloodArea) {
+          console.error("Projection failed.");
+          return null;
+        }
+
+        // Expand the polygon using geometryEngine.offset
+        const expandedFloodArea = geometryEngine.offset(projectedFloodArea, height, "meters");
+
+        return new Graphic({
+          geometry: expandedFloodArea,
+          symbol: {
+            type: "polygon-3d",
+            symbolLayers: [
+              {
+                type: "fill",
+                material: { color: [0, 119, 190, 0.7] },
+                edges: {
+                  type: "solid",
+                  color: [0, 0, 0, 0.2]
+                }
+              }
+            ]
+          }
+        });
+      }
+
+// Simulate rising water levels
+      let waterHeight = 70;
+      const maxHeight = -50; // Maximum flood height in meters
+
+      function simulateFlooding() {
+        console.log("Simulating flooding..." + waterHeight);
+
+        // Add curly braces to define the block of code for the 'if' condition
+        if (waterHeight < maxHeight) {
+          console.log("Simulating flooding... Limit");
+          return; // Stop recursion when the limit is reached
+        }
+
+        waterLayer.removeAll();
+
+        const waterGraphic = createWaterGraphic(waterHeight);
+        if (waterGraphic) {
+          waterLayer.add(waterGraphic);
+        }
+
+        waterHeight -= 1; // Decrease height (meters)
+        setTimeout(simulateFlooding, 200); // Update every 200ms
+      }
+
+
+      // Start simulation when the view is ready
+      view.when(simulateFlooding);
+    });
+  });
+</script>
+</body>
+</html>
