@@ -1,0 +1,615 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Heat Island Simulator</title>
+  <link rel="icon" type="image/x-icon" href="tree.png">
+  <link
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+          rel="stylesheet"
+  />
+  <style>
+    html,
+    body,
+    #viewDiv, #viewDiviFrame {
+      padding: 0;
+      margin: 0;
+      height: 98%;
+      width: 100%;
+      bottom: 0;
+      position: absolute;
+    }
+    #infoDiv {
+      position: absolute;
+      top: 6px;
+      left: 60px;
+    }
+    #paneDiv {
+      padding: 10px;
+      width: 270px;
+      background-color: rgba(255, 255, 255, 0.8);
+      position: absolute;
+      bottom: 105px;
+      right: 0;
+    }
+    .esri-attribution {
+      display: none !important;
+    }
+    /* Floating Button */
+    #chatAIButton {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 64px;
+      height: 64px;
+      background-color: #2d2d2d;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1.5em;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    #chatAIButton:hover {
+      border: 2px solid antiquewhite;
+    }
+
+    /* Overlay Background */
+    #overlayBackground {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    /* Chat Overlay */
+    .chat-overlay {
+      visibility: hidden; /* Initially hidden */
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60vw;
+      height: 70vh;
+      max-width: 90%;
+      max-height: 90%;
+      background: #1e1e1e;
+      color: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      z-index: 1002;
+      flex-direction: column;
+    }
+
+    /* Chat Header */
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: #2a2a2a;
+      border-bottom: 1px solid #3a3a3a;
+      font-size: 1.2em;
+    }
+
+    .chat-header h2 {
+      margin: 0;
+      color: #ddd;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      color: #e74c3c;
+    }
+
+    /* Chat Body */
+    .chat-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .chat-body h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    .chat-body .input-container {
+      position: relative;
+      width: 60%;
+      max-width: 600px;
+    }
+
+    .chat-body .input-container input {
+      width: 100%;
+      padding: 15px 20px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1em;
+      background-color: #2a2a2a;
+      color: #ddd;
+    }
+
+    .chat-body .input-container input::placeholder {
+      color: #888;
+    }
+
+    .chat-body .input-container .microphone {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: white;
+      font-size: 1.2em;
+    }
+
+    .chat-body .button-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 10px;
+    }
+
+    .chat-body .button-container button {
+      background-color: #2a2a2a;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    .chat-textbox {
+      width: 80%; /* Width relative to the container */
+      max-width: 600px; /* Maximum width */
+      height: 100px; /* Height of the text box */
+      margin: 20px auto; /* Center horizontally with some spacing */
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 1em;
+      border: none;
+      background-color: #2a2a2a;
+      color: #ddd;
+      display: block; /* Ensures it takes its own line */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      resize: none; /* Disable resizing */
+    }
+    .chat-textbox::placeholder {
+      color: #888; /* Placeholder text color */
+    }
+
+    /* Fade-in Animation */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 300px;
+      background-color: white;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+      transform: translateX(-100%); /* Hidden initially */
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px;
+      background-color: #f4f4f4;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .sidebar-header h3 {
+      margin: 0;
+    }
+
+    .sidebar-content {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar-content li {
+      padding: 15px 20px;
+      border-bottom: 1px solid #f4f4f4;
+    }
+
+    .sidebar-content li a {
+      text-decoration: none;
+      color: black; /* Ensure text color contrasts with the white background */
+      font-size: 1em; /* Adjust font size for readability */
+    }
+
+    .sidebar-content li:hover {
+      background-color: #f0f0f0; /* Slightly darker for hover effect */
+    }
+
+    /* Show Sidebar */
+    .sidebar.open {
+      transform: translateX(0); /* Slide in */
+    }
+
+    #loadingOverlay {
+      display: none; /* Hidden by default */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+      z-index: 1000; /* Ensure it's above all other content */
+    }
+    #loadingIndicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 1.0);
+      color: white;
+      padding: 20px;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    calcite-icon[icon="compass-needle"] {
+      margin-left: -4px;
+    }
+
+
+  </style>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.31/"></script>
+  <script src="index.js"></script>
+</head>
+<body>
+
+<div id="header" style="display: flex; align-items: center; vertical-align: middle; margin-top: -20px; padding-left: 15px; font-size: 1.1em;">
+  <button id="hamburgerMenu" style="border: none; background: none; font-size: 1.5em; margin-right: 10px; cursor: pointer;">
+    <i class="fas fa-bars"></i>
+  </button>
+  <span id="title">SATX 2024 - 3D City</span>
+</div>
+<div style="display: flex; padding-top:13px; overflow: hidden;">
+  <div id="sidebarMenu" class="sidebar" style="flex-shrink: 0; overflow: hidden; transition: width 0.3s ease;">
+    <ul class="sidebar-content" style="list-style: none; padding: 0; margin: 0;">
+      <li style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option15" id="cityService" style="display: flex; align-items: center; text-decoration: none; color: black;">
+          <i class="fas fa-city" style="margin-right: 10px; color: black; font-size: 1em; width: 15px;"></i>3D City
+        </a>
+        <button id="closeSidebar" class="close-btn" style="border: none; background: none; font-size: 1em; cursor: pointer; color: black;">✖</button>
+      </li>
+    </ul>
+    <div class="sidebar-header" style="background-color: #f4f4f4; padding: 10px; border-bottom: 1px solid #ddd;">
+      <h3 style="color: black;">Services</h3> <!-- Ensure the header text is visible -->
+    </div>
+    <ul class="sidebar-content" style="list-style: none; padding: 0; margin: 0;">
+      <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option2" style="text-decoration: none; color: black;"><i class="fas fa-home" style="margin-right: 10px; color: black;width: 15px;"></i>House Appraisals</a>
+      </li>
+      <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option3" id="uhiService" style="text-decoration: none; color: black;"><i class="fas fa-temperature-high" style="margin-right: 10px; color: black;width: 15px;"></i>UHI Service</a>
+      </li>
+      <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option4" style="text-decoration: none; color: black;"><i class="fas fa-water" style="margin-right: 10px; color: black;width: 15px;"></i>Flooding Service</a>
+      </li>
+
+      <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option5" style="text-decoration: none; color: black;"><i class="fas fa-th" style="margin-right: 10px; color: black;width: 15px;"></i>Grid Service</a>
+      </li>
+    </ul>
+  </div>
+  <div id="viewDiviFrame" style="flex-grow: 1; transition: margin-left 0.3s ease;">
+    <iframe id="floodingIframe"
+            src="https://dt-demo.prd.it.unity3d.com/"
+            width="100%"
+            height="100%"
+            style="border: none;">
+    </iframe>
+  </div>
+  <div id="viewDiv" style="flex-grow: 1; transition: margin-left 0.3s ease;">
+    <div id="infoDiv" style="padding: 10px; display: none">
+      <input
+              class="esri-component esri-widget esri-interactive"
+              type="button"
+              id="cursor"
+              value="Cursor"
+      />
+      <input
+              class="esri-component esri-widget esri-interactive"
+              type="button"
+              id="addTrees"
+              value="Add Tree"
+      />
+      <input
+              class="esri-component esri-widget esri-interactive"
+              type="button"
+              id="reset"
+              value="Reset"
+      />
+      <br>
+    </div>
+  </div>
+</div>
+
+
+<div id="paneDiv" style="display: none" class="esri-widget">
+  <b>View Statistics:</b><br>
+  Building Count: <b><span id="buildingCount">0</span></b><br>
+  Tree Count: <b><span id="treeCount">0</span></b><br>
+  Average temperature: <b><span id="avgTemperature">0°F</span></b><br><br>
+  <b>Tree Year (function disabled)</b>
+  <br>
+  <select id="selectTreePopulus" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
+    <option value=1>2021</option>
+    <option value=3>2017</option>
+  </select>
+  <b>Building Year (function disabled)</b>
+  <br>
+  <select id="selectBuildingPopulos" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
+    <option value=1>2021</option>
+    <option value=3>2017</option>
+  </select>
+  <br>
+  <b>LST Date</b>
+  <br>
+  <select id="selectLST" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">
+    <option value=1>Sep 2024</option>
+    <option value=2>Feb 2024</option>
+<!--    <option value=3>LCZ Test</option>-->
+  </select>
+
+</div>
+<div id="overlayBackground"></div>
+<button id="chatAIButton">
+  <i class="fas fa-building"></i>
+</button>
+<div id="chatAIOverlay" class="chat-overlay">
+  <div class="chat-header">
+    <h2>AI Model</h2>
+    <button id="closeChatAI" class="close-btn">✖</button>
+  </div>
+  <div class="chat-body">
+    <h1>What can I help with?</h1>
+    <textarea id="chatTextbox" class="chat-textbox" placeholder="..."></textarea>
+    <div class="input-container">
+      <input type="text" placeholder="Message LLM" />
+      <i class="fas fa-microphone microphone"></i>
+    </div>
+    <div class="button-container">
+      <button>Show me a raster</button>
+      <button>Surprise me</button>
+      <button>Analyze products</button>
+      <button>Summarize findings</button>
+      <button>Setup a scene</button>
+      <button>More</button>
+    </div>
+  </div>
+</div>
+<div id="loadingOverlay">
+  <div id="loadingIndicator">
+    Loading, please wait...
+</div>
+<script>
+  // Function to listen to SSE and update the chatTextbox
+  function listenToSSE(prompt) {
+    // Get reference to the chatTextbox
+    const chatTextbox = document.getElementById('chatTextbox');
+
+    // SSE URL
+    const sseUrl = `https://2172-129-115-106-110.ngrok-free.app/stream?prompt=${encodeURIComponent(prompt)}`; <!-- Make the Hello+World the prompt from the input tag inside input-container-->
+
+    // Create a Fetch request with custom headers
+    fetch(sseUrl, {
+      headers: {
+        "ngrok-skip-browser-warning": "true",
+      }
+    })
+            .then(response => {
+              // Ensure the response is OK and readable as a stream
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              const reader = response.body.getReader();
+              const decoder = new TextDecoder("utf-8");
+
+              // Function to read the stream
+              function readStream() {
+                reader.read().then(({ done, value }) => {
+                  if (done) {
+                    console.log("Stream complete.");
+                    return;
+                  }
+                  const chunk = decoder.decode(value, { stream: true });
+                  const lines = chunk.split("\n");
+                  for (const line of lines) {
+                    // Look for lines starting with "data:"
+                    if (line.startsWith("data:")) {
+                      // Extract the data after "data:"
+                      const data = line.slice(5);
+                      if (data) {
+                        chatTextbox.value += data;
+                      }
+                    }
+                  }
+
+                  // Continue reading
+                  readStream();
+                });
+              }
+
+              // Start reading the stream
+              readStream();
+            })
+            .catch(err => {
+              console.error("Fetch error:", err);
+            });
+  }
+
+  const chatAIButton = document.getElementById('chatAIButton');
+  const chatAIOverlay = document.getElementById('chatAIOverlay');
+  const overlayBackground = document.getElementById('overlayBackground');
+  const closeChatAI = document.getElementById('closeChatAI');
+  const viewDiv = document.getElementById('viewDiv');
+  const viewDiviFrame = document.getElementById('viewDiviFrame');
+
+  // Start with Chat AI overlay hidden
+  chatAIOverlay.style.display = 'none';
+  overlayBackground.style.display = 'none';
+  viewDiviFrame.style.display = "none";
+
+  // Toggle Chat AI overlay
+  chatAIButton.addEventListener('click', () => {
+    const isVisible = chatAIOverlay.style.visibility === 'visible';
+    chatAIOverlay.style.visibility = isVisible ? 'hidden' : 'visible';
+    chatAIOverlay.style.display = isVisible ? 'none' : 'flex';
+    overlayBackground.style.display = isVisible ? 'none' : 'block';
+  });
+
+  // Close Chat AI overlay
+  closeChatAI.addEventListener('click', () => {
+    chatAIOverlay.style.visibility = 'hidden';
+    chatAIOverlay.style.display = 'none';
+    overlayBackground.style.display = 'none';
+  });
+
+  const chatInput = document.querySelector('.input-container input');
+
+  // Add keydown event listener to detect when the "Enter" key is pressed
+  chatInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      const message = chatInput.value.trim(); // Get the input value
+      if (message) {
+        listenToSSE(message);
+
+        // Clear the input field after sending the message
+        chatInput.value = '';
+      } else {
+        alert('Please enter a message before pressing Enter!');
+      }
+    }
+  });
+  // Get references to the input field and the microphone icon
+  const microphoneIcon = document.querySelector('.microphone');
+
+  // Function to toggle the microphone to an arrow up
+  const toggleIcon = () => {
+    if (chatInput.value.trim()) {
+      // If input has text, change icon to arrow up
+      microphoneIcon.classList.remove('fa-microphone');
+      microphoneIcon.classList.add('fa-arrow-up');
+    } else {
+      // If input is empty, revert to microphone
+      microphoneIcon.classList.remove('fa-arrow-up');
+      microphoneIcon.classList.add('fa-microphone');
+    }
+  };
+
+  // Add input event listener to the input field
+  chatInput.addEventListener('input', toggleIcon);
+
+  const hamburgerMenu = document.getElementById('hamburgerMenu');
+  const closeSidebar = document.getElementById('closeSidebar');
+  const sidebarMenu = document.getElementById('sidebarMenu');
+
+  const sidebarWidth = 300; // Sidebar width in pixels
+
+  // Function to toggle the sidebar
+  hamburgerMenu.addEventListener('click', () => {
+    if (sidebarMenu.classList.contains('open')) {
+      // Sidebar is open, so close it
+      sidebarMenu.classList.remove('open'); // Hide sidebar
+      viewDiv.style.marginLeft = '0px'; // Reset viewDiv margin
+      viewDiv.style.width = '100%'; // Reset viewDiv width
+      viewDiviFrame.style.marginLeft = '0px'; // Reset viewDiv margin
+      viewDiviFrame.style.width = '100%'; // Reset viewDiv width
+    } else {
+      // Sidebar is closed, so open it
+      sidebarMenu.classList.add('open'); // Show sidebar
+      viewDiv.style.marginLeft = `${sidebarWidth}px`; // Shift viewDiv to the right
+      viewDiv.style.width = `calc(100% - ${sidebarWidth}px)`; // Adjust width of viewDiv
+      viewDiviFrame.style.marginLeft = `${sidebarWidth}px`; // Shift viewDiv to the right
+      viewDiviFrame.style.width = `calc(100% - ${sidebarWidth}px)`; // Adjust width of viewDiv
+    }
+  });
+
+  // Function to close the sidebar
+  closeSidebar.addEventListener('click', () => {
+    sidebarMenu.classList.remove('open'); // Hide sidebar
+    viewDiv.style.marginLeft = '0px'; // Reset viewDiv margin
+    viewDiv.style.width = '100%'; // Reset viewDiv width
+    viewDiviFrame.style.marginLeft = '0px'; // Reset viewDiv margin
+    viewDiviFrame.style.width = '100%'; // Reset viewDiv width
+  });
+
+  const floodingServiceLink = document.querySelector('a[href="#option4"]'); // Flooding Service link
+  const allServiceLinks = document.querySelectorAll('.sidebar-content a'); // All service links
+
+  // Function to show iframe and hide main content
+  function showFloodingIframe() {
+    viewDiv.style.display = "none";
+    viewDiviFrame.style.display = "block";
+  }
+
+  // Function to show main content and hide iframe
+  function showMainContent() {
+    viewDiv.style.display = "flex";
+    viewDiviFrame.style.display = "none";
+  }
+
+  // Event listener for Flooding Service
+  floodingServiceLink.addEventListener("click", (event) => {
+    event.preventDefault(); // Prevent default anchor behavior
+    showFloodingIframe();
+  });
+
+  // Event listener for all other service links to restore viewDiv
+  allServiceLinks.forEach(link => {
+    if (link !== floodingServiceLink) { // Exclude Flooding Service link
+      link.addEventListener("click", (event) => {
+        event.preventDefault(); // Prevent default anchor behavior
+        showMainContent();
+      });
+    }
+  });
+</script>
+</body>
+</html>
