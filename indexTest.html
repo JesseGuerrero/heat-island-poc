@@ -1,0 +1,127 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>TimeSlider widget | Sample | ArcGIS Maps SDK for JavaScript 4.31</title>
+
+  <!-- Load Calcite components from CDN -->
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+  <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+
+  <!-- Load the ArcGIS Maps SDK for JavaScript from CDN -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.31/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    #titleDiv {
+      padding: 10px;
+      font-weight: 36;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+<div id="viewDiv"></div>
+<div id="titleDiv" class="esri-widget">
+  Precipitation forecast for next 72 hours
+</div>
+
+<script>
+  require([
+    "esri/Map",
+    "esri/views/SceneView",
+    "esri/layers/FeatureLayer",
+    "esri/widgets/TimeSlider",
+    "esri/widgets/Zoom",
+    "esri/widgets/Legend",
+    "esri/widgets/Expand",
+    "esri/widgets/TimeZoneLabel"
+  ], (Map, SceneView, FeatureLayer, TimeSlider, Zoom, Legend, Expand, TimeZoneLabel) => {
+    const map = new Map({
+      basemap: "osm",
+      ground: "world-elevation"
+    });
+
+    const view = new SceneView({
+      container: "viewDiv",
+      map: map,
+      center: [-98.4936, 29.426],
+      zoom: 18,
+      camera: {
+        position: {
+          x: -98.4830,
+          y: 29.4078,
+          z: 800
+        },
+        tilt: 65
+      }
+    });
+
+    const layer = new FeatureLayer({
+      portalItem: {
+        id: "d99305d30b1f48b3b3695b914baa1b25"
+      }
+    });
+
+    map.add(layer);
+    layer.load().then(() => {
+      map.add(layer);
+
+      const timeSlider = new TimeSlider({
+        container: "timeSlider",
+        view: view,
+        mode: "time-window",
+        fullTimeExtent: layer.timeInfo.fullTimeExtent.expandTo("hours"),
+        stops: {
+          interval: layer.timeInfo.interval
+        },
+        layout: "auto",
+        timeVisible: true,
+        loop: true
+      });
+      view.ui.add(timeSlider, "bottom-right");
+    }).catch((error) => {
+      console.error("Error loading layer:", error);
+    });
+
+    const zoom = new Zoom({
+      view: view
+    });
+    view.ui.add(zoom, "top-left");
+
+    const legend = new Legend({
+      view: view
+    });
+
+    const expand = new Expand({
+      view: view,
+      content: legend,
+      mode: "floating"
+    });
+    view.ui.add(expand, "top-left");
+
+    const timeZoneLabel = new TimeZoneLabel({view});
+    view.ui.add(timeZoneLabel, "top-left");
+
+    const timezonePicker = document.createElement("calcite-input-time-zone");
+    timezonePicker.mode = "name";
+    timezonePicker.id = "timezone-picker";
+    view.ui.add(timezonePicker, "top-right");
+
+    timezonePicker.addEventListener("calciteInputTimeZoneChange", () => {
+      view.timeZone = timezonePicker.value;
+    });
+  });
+</script>
+</body>
+</html>
