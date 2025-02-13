@@ -3,10 +3,11 @@ require([
   "esri/layers/GraphicsLayer",
   "esri/layers/SceneLayer",
   "esri/layers/TileLayer",
+  "esri/layers/IntegratedMesh3DTilesLayer",
   "esri/request",
   "util.js",
   "auth.js"
-], function(FeatureLayer, GraphicsLayer, SceneLayer, TileLayer, esriRequest, Util, Auth) {
+], function(FeatureLayer, GraphicsLayer, SceneLayer, TileLayer, IntegratedMesh3DTilesLayer, esriRequest, Util, Auth) {
   async function main() {
     const token = await Auth.initToken();
     const buildingsLayer = new SceneLayer({
@@ -40,6 +41,15 @@ require([
       }
     });
 
+    const layer = new IntegratedMesh3DTilesLayer({
+      url: "https://tile.googleapis.com/v1/3dtiles/root.json",
+      title: "Google tiles",
+      customParameters: {
+        // see https://developers.google.com/maps/documentation/tile/3d-tiles-overview
+        "key": "AIzaSyBs91cGrEkkESlZTy8AxbGy2wzlfVOfhG4"
+      }
+    });
+
     const lcz = new TileLayer({
       portalItem: {
         id: "55e9d9daabda4f5bbb8838840e0c43b7",
@@ -47,9 +57,10 @@ require([
       },
       opacity: 0.5
     });
-    Util.map.add(buildingsLayer);
-    Util.map.add(buildingsWestLayer);
-    Util.map.add(threeDBuildingMesh);
+    Util.map.add(layer)
+    // Util.map.add(buildingsLayer);
+    // Util.map.add(buildingsWestLayer);
+    // Util.map.add(threeDBuildingMesh);
 
     const immutableSepLSTVectorLayer = new FeatureLayer({
       portalItem: {
