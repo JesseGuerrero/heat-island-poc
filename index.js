@@ -41,7 +41,7 @@ require([
       }
     });
 
-    const layer = new IntegratedMesh3DTilesLayer({
+    const google3DTiles = new IntegratedMesh3DTilesLayer({
       url: "https://tile.googleapis.com/v1/3dtiles/root.json",
       title: "Google tiles",
       customParameters: {
@@ -49,7 +49,6 @@ require([
         "key": "AIzaSyBs91cGrEkkESlZTy8AxbGy2wzlfVOfhG4"
       }
     });
-
     const lcz = new TileLayer({
       portalItem: {
         id: "55e9d9daabda4f5bbb8838840e0c43b7",
@@ -57,7 +56,7 @@ require([
       },
       opacity: 0.5
     });
-    Util.map.add(layer)
+    Util.map.add(google3DTiles)
     // Util.map.add(buildingsLayer);
     // Util.map.add(buildingsWestLayer);
     // Util.map.add(threeDBuildingMesh);
@@ -102,30 +101,6 @@ require([
         Util.calculateAverageTemperature(getLSTLayers()[1])
     });
 
-    //Toggle UHI
-    const cityService = document.getElementById('cityService');
-    const uhiService = document.getElementById('uhiService');
-    const paneDiv = document.getElementById('paneDiv');
-    const infoDiv = document.getElementById('infoDiv');
-    const selectLST = document.getElementById('selectLST');
-    const title = document.getElementById('title');
-    cityService.addEventListener('click', () => {
-      paneDiv.style.display = "none";
-      infoDiv.style.display = "none";
-      title.innerText = "SATX 2024 - 3D City"
-      Util.map.remove(Util.getCurrentLSTLayer(immutableFebLSTVectorLayer, immutableSepLSTVectorLayer, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer)[1])
-    })
-
-    uhiService.addEventListener('click', () => {
-      title.innerText = "SATX 2024 - Heat Island"
-      paneDiv.style.display = "block";
-      infoDiv.style.display = "block";
-      value = selectLST.value;
-      Util.handleLSTChange(mutableFebLSTVectorLayer, mutableSepLSTVectorLayer, lcz);
-      if(value != 3)
-        Util.calculateAverageTemperature(getLSTLayers()[1])
-    })
-
     const immutableTreesLayer = new FeatureLayer({
       portalItem: {
         id: "18039c2ee1b443f8ad528d111b639428"
@@ -140,7 +115,52 @@ require([
       },
       renderer: Util.treeRenderer
     });
-    Util.map.add(mutableTreesLayer);
+
+    //Toggle UHI
+    const cityService = document.getElementById('cityService');
+    const uhiService = document.getElementById('uhiService');
+    const paneDiv = document.getElementById('paneDiv');
+    const infoDiv = document.getElementById('infoDiv');
+    const selectLST = document.getElementById('selectLST');
+    const title = document.getElementById('title');
+    cityService.addEventListener('click', () => {
+      paneDiv.style.display = "none";
+      infoDiv.style.display = "none";
+      title.innerText = "SATX 2024 - 3D City"
+      if(!Util.map.layers.includes(google3DTiles))
+        Util.map.add(google3DTiles)
+      if(Util.map.layers.includes(buildingsLayer))
+        Util.map.remove(buildingsLayer)
+      if(Util.map.layers.includes(buildingsWestLayer))
+        Util.map.remove(buildingsWestLayer)
+      if(Util.map.layers.includes(threeDBuildingMesh))
+        Util.map.remove(threeDBuildingMesh)
+      if(Util.map.layers.includes(mutableTreesLayer))
+        Util.map.remove(mutableTreesLayer);
+      Util.map.remove(Util.getCurrentLSTLayer(immutableFebLSTVectorLayer, immutableSepLSTVectorLayer, mutableFebLSTVectorLayer, mutableSepLSTVectorLayer)[1])
+    })
+
+    uhiService.addEventListener('click', () => {
+      title.innerText = "SATX 2024 - Heat Island"
+      paneDiv.style.display = "block";
+      infoDiv.style.display = "block";
+      if(Util.map.layers.includes(google3DTiles))
+        Util.map.remove(google3DTiles)
+      if(!Util.map.layers.includes(buildingsLayer))
+        Util.map.add(buildingsLayer)
+      if(!Util.map.layers.includes(buildingsWestLayer))
+        Util.map.add(buildingsWestLayer)
+      if(!Util.map.layers.includes(threeDBuildingMesh))
+        Util.map.add(threeDBuildingMesh)
+      if(!Util.map.layers.includes(mutableTreesLayer))
+        Util.map.add(mutableTreesLayer);
+      value = selectLST.value;
+      Util.handleLSTChange(mutableFebLSTVectorLayer, mutableSepLSTVectorLayer, lcz);
+      if(value != 3)
+        Util.calculateAverageTemperature(getLSTLayers()[1])
+    })
+
+
 
     // Hide the Sketch widget from the UI until "Add Trees" button is clicked
     Util.view.ui.add(Util.sketch, "top-right");
