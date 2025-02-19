@@ -5,9 +5,12 @@ require([
   "esri/layers/TileLayer",
   "esri/layers/IntegratedMesh3DTilesLayer",
   "esri/request",
+  "esri/widgets/Expand",
+  "esri/widgets/Weather",
+  "esri/widgets/Daylight",
   "util.js",
   "auth.js"
-], function(FeatureLayer, GraphicsLayer, SceneLayer, TileLayer, IntegratedMesh3DTilesLayer, esriRequest, Util, Auth) {
+], function(FeatureLayer, GraphicsLayer, SceneLayer, TileLayer, IntegratedMesh3DTilesLayer, esriRequest, Expand, Weather, Daylight, Util, Auth) {
   async function main() {
     const token = await Auth.initToken();
     const buildingsLayer = new SceneLayer({
@@ -60,7 +63,62 @@ require([
     // Util.map.add(buildingsLayer);
     // Util.map.add(buildingsWestLayer);
     // Util.map.add(threeDBuildingMesh);
+    const weatherExpand = new Expand({
+      view: Util.view,
+      content: new Weather({
+        view: Util.view
+      }),
+      group: "top-right",
+      expanded: true
+    });
 
+    const daylightExpand = new Expand({
+      view: Util.view,
+      content: new Daylight({
+        view: Util.view
+      }),
+      group: "top-right"
+    });
+    Util.view.ui.add([weatherExpand, daylightExpand], "top-right");
+
+    /***********************************
+     * Add functionality to change between flooding and no flooding
+     ***********************************/
+    // Wait for the view to be loaded, in order to being able to retrieve the layer
+    Util.view.when(() => {
+      // Find the layer for the
+      let floodLevel = scene.allLayers.find(function (layer) {
+        return layer.title === "Flood Level";
+      });
+
+      const selection = document.getElementById("selection");
+
+      selection.addEventListener("calciteSegmentedControlChange", () => {
+        switch (selection.selectedItem.value) {
+          case "flooding":
+            // Change the weather to rainy to match the flooding scenario
+            view.environment.weather = {
+              type: "rainy", // autocasts as new RainyWeather({ cloudCover: 0.7, precipitation: 0.3 })
+              cloudCover: 0.7,
+              precipitation: 0.3
+            };
+            // Turn on the water layer showing the flooding
+            floodLevel.visible = true;
+            break;
+
+          case "noFlooding":
+            // Change the weather back to cloudy
+            Util.view.environment.weather = {
+              type: "cloudy", // autocasts as new CloudyWeather({ cloudCover: 0.3 })
+              cloudCover: 0.3
+            };
+
+            // Turn off the water layer showing the flooding
+            floodLevel.visible = false;
+            break;
+        }
+      });
+    });
     const immutableSepLSTVectorLayer = new FeatureLayer({
       portalItem: {
         id: "d129f34b746846dda6debd89c55cf3f3"
