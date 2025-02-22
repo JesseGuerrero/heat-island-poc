@@ -14,6 +14,11 @@ require([
 ], function(FeatureLayer, TimeSlider, Zoom, Legend, Expand, TimeZoneLabel, GraphicsLayer, SceneLayer, TileLayer, esriRequest, Util, Auth) {
   async function main() {
     const token = await Auth.initToken();
+    Util.view.environment.weather = {
+      type: "rainy", // autocasts as new RainyWeather({ cloudCover: 0.7, precipitation: 0.3 })
+      cloudCover: 0.7,
+      precipitation: 0.3
+    };
     const layer = new FeatureLayer({
       portalItem: {
         id: "02795552320b48bda2e49d9995057921",
@@ -167,72 +172,18 @@ require([
     });
     Util.map.add(mutableTreesLayer);
 
-    function updateVisibleCounts() {
-      Util.calculateAverageTemperature(layer)
-      const visibleExtent = Util.view.extent;  // Get the current visible extent
-      let buildingCount = 0;
-
-      // Create promises for querying visible counts
-      const buildingWestPromise = buildingsWestLayer.queryFeatureCount({
-        geometry: visibleExtent,
-        spatialRelationship: "intersects"
-      });
-
-      const buildingPromise = buildingsLayer.queryFeatureCount({
-        geometry: visibleExtent,
-        spatialRelationship: "intersects"
-      });
-
-      const treePromise = mutableTreesLayer.queryFeatureCount({
-        geometry: visibleExtent,
-        spatialRelationship: "intersects"
-      });
-
-      // Use Promise.all to wait for all queries to complete
-      Promise.all([buildingWestPromise, buildingPromise, treePromise])
-          .then(([visibleBuildingWestCount, visibleBuildingCount, treeCount]) => {
-            // Update the counts
-            buildingCount = visibleBuildingWestCount + visibleBuildingCount;
-
-            // Update the HTML elements if the counts are non-zero
-            if (buildingCount !== 0) {
-              document.querySelector("#buildingCount").innerHTML = buildingCount;
-            }
-            if (treeCount !== 0) {
-              document.querySelector("#treeCount").innerHTML = treeCount;
-            }
-          })
-          .catch(error => {
-            console.error("Error querying visible counts: ", error);
-          });
-    }
-
-    // Debounce the `updateVisibleCounts` function
-    const debouncedUpdateVisibleCounts = Util.debounce(updateVisibleCounts, 300);
 
     // Ensure all layers are loaded before updating counts
     Promise.all([
       buildingsWestLayer.when(),
       buildingsLayer.when(),
       mutableTreesLayer.when()
-    ]).then(() => {
-      // Layers are loaded, proceed to update counts
-      updateVisibleCounts();
-      Util.view.watch("extent", debouncedUpdateVisibleCounts);  // Watch for extent changes
-    }).catch(error => {
-      console.error("Error loading layers: ", error);
-    });
+    ])
 
     Util.view.when(() => {
-      updateVisibleCounts()
-      Util.view.popupEnabled = true; //disable popups
+      Util.view.popupEnabled = false; //disable popups
     });
 
-
-
-
-    // Re-query the visible building count whenever the view is moved or zoomed
-    Util.view.watch("extent", updateVisibleCounts);
   };
   main();
 });
