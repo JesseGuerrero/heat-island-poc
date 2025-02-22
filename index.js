@@ -133,8 +133,8 @@ require([
         token: Util.token
       },
       elevationInfo: {
-        mode: "absolute-height",
-        offset: 0
+        mode: "relative-to-ground",  // This forces it to ground level
+        offset: -206  // No vertical offset
       }
     });
 
