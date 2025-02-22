@@ -1,6 +1,6 @@
 // util.js
-define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layers/GraphicsLayer",],
-    function (Map, SceneView, Sketch, GraphicsLayer) {
+define(["esri/WebScene", "esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layers/GraphicsLayer",],
+    function (WebScene, Map, SceneView, Sketch, GraphicsLayer) {
 
     function showLoading() {
         const loadingOverlay = document.getElementById("loadingOverlay");
@@ -245,14 +245,9 @@ define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layer
         sketch.cancel();  // Cancel any ongoing Sketch operation
     }
 
-    const map = new Map({
-        basemap: "osm",
-        ground: "world-elevation"
-    });
 
     const view = new SceneView({
         container: "viewDiv",
-        map: map,
         center: [-98.4936, 29.426],
         zoom: 18,
         camera: {
@@ -431,7 +426,6 @@ define(["esri/Map", "esri/views/SceneView", "esri/widgets/Sketch",   "esri/layer
         resetByUpdateFeatureLayer: resetByUpdateFeatureLayer,
         deleteTreeNullFeatureLayer: deleteTreeNullFeatureLayer,
         stopSketch: stopSketch,
-        map: map,
         view: view,
         treeRenderer: treeRenderer,
         sketch, sketch,

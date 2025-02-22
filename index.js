@@ -1,5 +1,9 @@
 require([
+  "esri/WebScene",
+  "esri/views/SceneView",
   "esri/layers/FeatureLayer",
+  "esri/widgets/Weather",
+  "esri/widgets/Daylight",
   "esri/widgets/TimeSlider",
   "esri/widgets/Zoom",
   "esri/widgets/Legend",
@@ -11,14 +15,39 @@ require([
   "esri/request",
   "util.js",
   "auth.js"
-], function(FeatureLayer, TimeSlider, Zoom, Legend, Expand, TimeZoneLabel, GraphicsLayer, SceneLayer, TileLayer, esriRequest, Util, Auth) {
+], function(WebScene, SceneView, FeatureLayer, Weather, Daylight, TimeSlider, Zoom, Legend, Expand, TimeZoneLabel, GraphicsLayer, SceneLayer, TileLayer, esriRequest, Util, Auth) {
   async function main() {
     const token = await Auth.initToken();
-    Util.view.environment.weather = {
-      type: "rainy", // autocasts as new RainyWeather({ cloudCover: 0.7, precipitation: 0.3 })
-      cloudCover: 0.7,
-      precipitation: 0.3
-    };
+    const map = new WebScene({
+      portalItem: {
+        id: "d8eda4aaae134cd186de340dd00e4ea6"
+      },
+      basemap: "osm"
+    });
+
+    // Create a new SceneView and set the weather to cloudy
+    const scene_view = new SceneView({
+      map: map,
+      container: "viewDiv",
+      center: [-98.4936, 29.426],
+      zoom: 18,
+      camera: {
+        position: {
+          x: -98.4830,
+          y: 29.4078,
+          z: 800
+        },
+        tilt: 65
+      },
+      environment: {
+        weather: {
+          type: "rainy",
+          cloudCover: 0.7,
+          precipitation: 0.3
+        }
+      }
+    });
+    Util.view.map = map;
     const layer = new FeatureLayer({
       portalItem: {
         id: "02795552320b48bda2e49d9995057921",
@@ -74,21 +103,9 @@ require([
         }
       });
 
-      Util.view.ui.add(timeSlider, "bottom-right");
+      scene_view.ui.add(timeSlider, "bottom-right");
     }).catch((error) => {
       console.error("Error loading layer:", error);
-    });
-
-    layer.when(() => {
-      console.log("Available fields:", layer.fields.map(f => f.name));
-    });
-    layer.queryFeatures({
-      where: "1=1",
-      outFields: ["AcquisitionDate"],
-      returnGeometry: false,
-      num: 5  // Just get first 5 records to check
-    }).then(response => {
-      console.log("Sample dates:", response.features.map(f => f.attributes.AcquisitionDate));
     });
 
     const zoom = new Zoom({
@@ -107,81 +124,51 @@ require([
     });
     Util.view.ui.add(expand, "top-left");
 
-    const buildingsLayer = new SceneLayer({
-      portalItem: {
-        id: "359b5767d34b4b5d911737b22f85a898",
-        token: Util.token
-      },
-      elevationInfo: {
-        mode: "absolute-height",
-        offset: 0
-      }
-    });
-    const buildingsWestLayer = new SceneLayer({
-      portalItem: {
-        id: "93bb781426864219981e94aab54f6afc",
-        token: Util.token
-      },
-      elevationInfo: {
-        mode: "absolute-height",
-        offset: 0
-      }
-    });
-    const threeDBuildingMesh = new SceneLayer({
-      portalItem: {
-        id: "ba9bf519dc6949bbae241c578157175d",
-        token: Util.token
-      },
-      elevationInfo: {
-        mode: "relative-to-ground",  // This forces it to ground level
-        offset: -206  // No vertical offset
-      }
+    /***********************************
+     * Add the widgets' UI elements to the view
+     ***********************************/
+    const weatherExpand = new Expand({
+      view: scene_view,
+      content: new Weather({
+        view: scene_view
+      }),
+      group: "top-right",
+      expanded: true
     });
 
-    Util.map.add(buildingsLayer);
-    Util.map.add(buildingsWestLayer);
-    Util.map.add(threeDBuildingMesh);
+    const daylightExpand = new Expand({
+      view: scene_view,
+      content: new Daylight({
+        view: scene_view
+      }),
+      group: "top-right"
+    });
+    scene_view.ui.add([weatherExpand, daylightExpand], "top-right");
 
     //Toggle UHI
     const cityService = document.getElementById('cityService');
     const uhiService = document.getElementById('uhiService');
     const title = document.getElementById('title');
     cityService.addEventListener('click', () => {
-      const timeSlider = document.getElementsByClassName('esri-time-slider')[0];
-      timeSlider.style.display = "none";
       title.innerText = "SATX 2024 - 3D City"
-      Util.map.remove(layer)
+      const timeSlider = document.getElementsByClassName('esri-time-slider')[0];
+      const weatherSlider = document.getElementsByClassName('esri-ui-top-right')[0];
+      weatherSlider.style.display = "block";
+      timeSlider.style.display = "none";
+      map.remove(layer)
     })
 
     uhiService.addEventListener('click', () => {
       title.innerText = "SATX 2024 - Heat Island"
       const timeSlider = document.getElementsByClassName('esri-time-slider')[0];
+      const weatherSlider = document.getElementsByClassName('esri-ui-top-right')[0];
+      weatherSlider.style.display = "none";
       timeSlider.style.display = "block";
-      Util.map.add(layer)
-      Util.calculateAverageTemperature(layer)
+      map.add(layer)
     })
 
-    const mutableTreesLayer = new FeatureLayer({
-      portalItem: {
-        id: "136b0b29bff54ddfb6ed36fdc9288078"
-      },
-      elevationInfo: {
-        mode: "on-the-ground"
-      },
-      renderer: Util.treeRenderer
-    });
-    Util.map.add(mutableTreesLayer);
-
-
-    // Ensure all layers are loaded before updating counts
-    Promise.all([
-      buildingsWestLayer.when(),
-      buildingsLayer.when(),
-      mutableTreesLayer.when()
-    ])
-
     Util.view.when(() => {
-      Util.view.popupEnabled = false; //disable popups
+      Util.view.popupEnabled = false;
     });
 
   };
