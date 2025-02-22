@@ -20,9 +20,8 @@ require([
     const token = await Auth.initToken();
     const map = new WebScene({
       portalItem: {
-        id: "d8eda4aaae134cd186de340dd00e4ea6"
-      },
-      basemap: "osm"
+        id: "f70fa21522ce48f1b0366a4873641ddc"
+      }
     });
 
     // Create a new SceneView and set the weather to cloudy
@@ -48,7 +47,23 @@ require([
       }
     });
     Util.view.map = map;
-    const layer = new FeatureLayer({
+
+    scene_view.when(() => {
+      const lod3Layer = map.layers.find(layer =>
+          layer.title && layer.title.toLowerCase().includes('lod3')
+      );
+
+      if (lod3Layer) {
+        // Set elevation info
+        lod3Layer.elevationInfo = {
+          mode: "relative-to-ground",
+          offset: -206.5
+        };
+      }
+
+    })
+
+    const temporalTemperature = new FeatureLayer({
       portalItem: {
         id: "02795552320b48bda2e49d9995057921",
       },
@@ -62,16 +77,16 @@ require([
       }
     });
     // Util.map.add(layer);
-    layer.when(async () => {
+    temporalTemperature.when(async () => {
       try {
-        await Util.rampLSTToPrediction(layer, "rank", "gridcode");  // Assuming "gridcode" is the field name
+        await Util.rampLSTToPrediction(temporalTemperature, "rank", "gridcode");  // Assuming "gridcode" is the field name
       } catch (error) {
         console.error("Error applying renderer to layer:", error);
       }
     });
-    layer.load().then(async () => {
+    temporalTemperature.load().then(async () => {
       // Query to get unique acquisition dates
-      const uniqueDatesQuery = await layer.queryFeatures({
+      const uniqueDatesQuery = await temporalTemperature.queryFeatures({
         where: "1=1",
         outFields: ["AcquisitionDate"],
         returnDistinctValues: true,
@@ -85,7 +100,7 @@ require([
 
       const timeSlider = new TimeSlider({
         container: "timeSlider",
-        view: Util.view,
+        view: scene_view,
         mode: "instant",
         fullTimeExtent: {
           start: new Date(uniqueDates[0]),              // First date
@@ -155,7 +170,7 @@ require([
       const weatherSlider = document.getElementsByClassName('esri-ui-top-right')[0];
       weatherSlider.style.display = "block";
       timeSlider.style.display = "none";
-      map.remove(layer)
+      map.remove(temporalTemperature)
     })
 
     uhiService.addEventListener('click', () => {
@@ -164,7 +179,7 @@ require([
       const weatherSlider = document.getElementsByClassName('esri-ui-top-right')[0];
       weatherSlider.style.display = "none";
       timeSlider.style.display = "block";
-      map.add(layer)
+      map.add(temporalTemperature)
     })
 
     Util.view.when(() => {
