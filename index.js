@@ -104,7 +104,7 @@ require([
 
     const buildingsLayer = new SceneLayer({
       portalItem: {
-        id: "5f3bfa18600a41979e989f357f4bcc76",
+        id: "359b5767d34b4b5d911737b22f85a898",
         token: Util.token
       },
       elevationInfo: {
@@ -124,7 +124,7 @@ require([
     });
     const threeDBuildingMesh = new SceneLayer({
       portalItem: {
-        id: "a553a5d36795411a905844082ddcb70f",
+        id: "ba9bf519dc6949bbae241c578157175d",
         token: Util.token
       },
       elevationInfo: {
