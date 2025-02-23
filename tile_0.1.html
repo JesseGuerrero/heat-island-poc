@@ -1,0 +1,350 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Filtered 3D Object SceneLayer</title>
+
+  <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+  <link rel="stylesheet" href="https://js.arcgis.com/4.31/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.31/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+<div id="viewDiv"></div>
+<script>
+  require([
+    "esri/Map",
+    "esri/layers/TileLayer",
+    "esri/layers/GraphicsLayer",
+    "esri/views/SceneView",
+    "esri/layers/FeatureLayer",
+    "esri/request",
+    "esri/identity/IdentityManager",
+    "esri/layers/SceneLayer",
+    "esri/geometry/geometryEngine",
+    "esri/layers/IntegratedMesh3DTilesLayer",
+    "esri/widgets/Zoom",
+    "esri/widgets/Legend",
+    "esri/widgets/Expand",
+    "esri/widgets/TimeSlider"
+  ], (
+          Map,
+          TileLayer,
+          GraphicsLayer,
+          SceneView,
+          FeatureLayer,
+          esriRequest,
+          IdentityManager,
+          SceneLayer,
+          geometryEngine,
+          IntegratedMesh3DTilesLayer,
+          Zoom,
+          Legend,
+          Expand,
+          TimeSlider
+  ) => {
+    async function main() {
+      async function initToken() {
+        const username = "jesus.guerrero6_utsa";
+        const password = "G0di$goodallthetime";
+        const tokenUrl = "https://utsa.maps.arcgis.com/sharing/rest/generateToken";
+        const tokenParams = {
+          username: username,
+          password: password,
+          referer: window.location.origin,
+          expiration: 60,
+          f: "json"
+        };
+
+        const response = await esriRequest(tokenUrl, {
+          method: "post",
+          query: tokenParams
+        });
+        const token = response.data.token;
+        IdentityManager.registerToken({
+          server: "https://utsa.maps.arcgis.com",
+          token: token,
+          userId: username
+        });
+        return token;
+      }
+      const token = initToken()
+
+      const map = new Map({
+        basemap: "osm",
+        ground: "world-elevation"
+      });
+
+      const view = new SceneView({
+        container: "viewDiv",
+        map: map,
+        center: [-98.4936, 29.426],
+        zoom: 18,
+        camera: {
+          position: {
+            x: -98.4830,
+            y: 29.4078,
+            z: 800
+          },
+          tilt: 65
+        }
+      });
+      const google3DTiles = new IntegratedMesh3DTilesLayer({
+        url: "https://tile.googleapis.com/v1/3dtiles/root.json",
+        title: "Google tiles",
+        customParameters: {
+          // see https://developers.google.com/maps/documentation/tile/3d-tiles-overview
+          "key": "AIzaSyBs91cGrEkkESlZTy8AxbGy2wzlfVOfhG4"
+        }
+      });
+
+      // Function to generate a color ramp based on normalized value
+      function colorRampPrediction(min, max, value) {
+        // Normalize value between 0 and 1
+        const normalizedValue = (value - min) / (max - min);
+
+        // Define RGB values for the color ramp
+        const startColor = { r: 0, g: 128, b: 128 }; // Blue
+        const midColor = { r: 255, g: 255, b: 0 }; // Yellow
+        const endColor = { r: 255, g: 0, b: 0 }; // Red
+
+        let r, g, b;
+
+        if (normalizedValue < 0.5) {
+          // Interpolate between startColor and midColor
+          const t = normalizedValue * 2; // Scale to [0, 1]
+          r = Math.round(startColor.r + t * (midColor.r - startColor.r));
+          g = Math.round(startColor.g + t * (midColor.g - startColor.g));
+          b = Math.round(startColor.b + t * (midColor.b - startColor.b));
+        } else {
+          // Interpolate between midColor and endColor
+          const t = (normalizedValue - 0.5) * 2; // Scale to [0, 1]
+          r = Math.round(midColor.r + t * (endColor.r - midColor.r));
+          g = Math.round(midColor.g + t * (endColor.g - midColor.g));
+          b = Math.round(midColor.b + t * (endColor.b - midColor.b));
+        }
+
+        // Convert RGB to a color string
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+
+      async function rampLSTToPrediction(lstLayer, valueString) {
+        try {
+          // Query to get statistics for the grid_code field
+          const result = await lstLayer.queryFeatures({
+            where: "1=1",
+            outStatistics: [
+              {
+                statisticType: "min",
+                onStatisticField: valueString,
+                outStatisticFieldName: "minValue"
+              },
+              {
+                statisticType: "max",
+                onStatisticField: valueString,
+                outStatisticFieldName: "maxValue"
+              }
+            ]
+          });
+
+          const popupTemplate = {
+            title: "Weather",
+            content: [{
+              type: "fields",
+              fieldInfos: [{
+                fieldName: valueString,  // The original field name
+                label: "Temperature (°F)",  // Renaming it in the popup
+                visible: true  // Ensure only this field is visible
+              }]
+            }]
+          };
+
+          const stats = result.features[0].attributes;
+          const minValue = stats.minValue;
+          const maxValue = stats.maxValue;
+
+          // Generate uniqueValueInfos for each value in the range
+          const uniqueValueInfos = [];
+          for (let value = minValue; value <= maxValue; value++) {
+            uniqueValueInfos.push({
+              value: value,
+              symbol: {
+                type: "simple-fill",
+                color: colorRampPrediction(minValue, maxValue, value),
+                outline: {
+                  width: 0,
+                }
+              }
+            });
+          }
+
+          // Set the renderer
+          const renderer = {
+            type: "unique-value",
+            field: valueString,
+            uniqueValueInfos: uniqueValueInfos
+          };
+          lstLayer.renderer = renderer;
+          lstLayer.popupTemplate = popupTemplate;
+          lstLayer.opacity = 0.5;
+        } catch (error) {
+          console.error("Error querying features:", error);
+        }
+      }
+
+
+      const layer = new FeatureLayer({
+        portalItem: {
+          id: "02795552320b48bda2e49d9995057921",
+          token: token
+        },
+        timeInfo: {
+          startField: "AcquisitionDate",
+          endField: "AcquisitionDate",
+          timeExtent: {
+            start: new Date(1577836800000),  // Your earliest timestamp
+            end: new Date(1577836800000 + (365 * 24 * 60 * 60 * 1000))  // One year later
+          }
+        },
+        selectionEnabled: false,  // Disable selection
+        popupEnabled: false,     // Disable popups
+        listMode: "hide"
+      });
+
+      layer.when(async () => {
+        try {
+          await rampLSTToPrediction(layer, "rank", "gridcode");  // Assuming "gridcode" is the field name
+        } catch (error) {
+          console.error("Error applying renderer to layer:", error);
+        }
+      });
+      layer.load().then(async () => {
+        // Query to get unique acquisition dates
+        const uniqueDatesQuery = await layer.queryFeatures({
+          where: "1=1",
+          outFields: ["AcquisitionDate"],
+          returnDistinctValues: true,
+          orderByFields: "AcquisitionDate"  // Sort chronologically
+        });
+
+        // Extract the unique dates and sort them
+        const uniqueDates = uniqueDatesQuery.features
+                .map(f => f.attributes.AcquisitionDate)
+                .sort((a, b) => a - b);  // Sort numerically since these are timestamps
+
+        const timeSlider = new TimeSlider({
+          container: "timeSlider",
+          view: view,
+          mode: "instant",
+          fullTimeExtent: {
+            start: new Date(uniqueDates[0]),              // First date
+            end: new Date(uniqueDates[uniqueDates.length - 1])  // Last date
+          },
+          stops: {
+            dates: uniqueDates.map(date => new Date(date))  // Convert timestamps to Date objects
+          },
+          layout: "auto",
+          timeVisible: true,
+          loop: true,
+          playRate: 2000,  // 2 seconds between each date
+          labelFormatFunction: (value) => {
+            return new Date(value).toLocaleDateString();
+          }
+        });
+
+        view.ui.add(timeSlider, "bottom-right");
+      }).catch((error) => {
+        console.error("Error loading layer:", error);
+      });
+
+      layer.when(() => {
+        console.log("Available fields:", layer.fields.map(f => f.name));
+      });
+      layer.queryFeatures({
+        where: "1=1",
+        outFields: ["AcquisitionDate"],
+        returnGeometry: false,
+        num: 5  // Just get first 5 records to check
+      }).then(response => {
+        console.log("Sample dates:", response.features.map(f => f.attributes.AcquisitionDate));
+      });
+
+      const zoom = new Zoom({
+        view: view
+      });
+      view.ui.add(zoom, "top-left");
+
+      const legend = new Legend({
+        view: view
+      });
+
+      const expand = new Expand({
+        view: view,
+        content: legend,
+        mode: "floating"
+      });
+      view.ui.add(expand, "top-left");
+
+
+      const footprints = new FeatureLayer({
+        portalItem: {
+          id: "0ecbdcfc8a9e45feb1676831f81b0b95",
+          token: token
+        },
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-fill",
+            color: [255, 255, 255, 0.1],  // Red with 50% opacity
+            outline: {
+              color: [0, 0, 0, 0.7],
+              width: 1.5
+            }
+          }
+        },
+        elevationInfo: {
+          mode: "on-the-ground",
+          offset: 0,
+          featureExpressionInfo: {
+            expression: "0"  // Force features to ground level
+          },
+          unit: "meters"
+        },
+        popupTemplate: {
+          title: "{expression/buildingName}",  // Use the expression result as title
+          expressionInfos: [{
+            name: "buildingName",
+            title: "Building Name",
+            expression: "Dictionary($feature.names).primary"
+          }],
+          content: [{
+            type: "fields",
+            fieldInfos: [{
+              fieldName: "expression/buildingName",
+              label: "Building Name"
+            }]
+          }],
+          outFields: ["names"]
+        },
+      });
+      map.add(google3DTiles)
+      map.add(layer);
+      map.add(footprints)
+    }
+    main();
+  });
+</script>
+</body>
+</html>
