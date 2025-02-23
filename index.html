@@ -337,7 +337,7 @@
         <a href="#option3" id="uhiService" style="text-decoration: none; color: black;"><i class="fas fa-temperature-high" style="margin-right: 10px; color: black;width: 15px;"></i>UHI Service</a>
       </li>
       <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
-        <a href="tile_0.1" style="text-decoration: none; color: black;"><i class="fas fa-water" style="margin-right: 10px; color: black;width: 15px;"></i>Flooding Service</a>
+        <a href="heat-island-poc/tile_0.1" style="text-decoration: none; color: black;"><i class="fas fa-water" style="margin-right: 10px; color: black;width: 15px;"></i>Flooding Service</a>
       </li>
 
       <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
@@ -553,7 +553,7 @@
     viewDiviFrame.style.width = '100%'; // Reset viewDiv width
   });
 
-  const floodingServiceLink = document.querySelector('a[href="#option4"]'); // Flooding Service link
+  const floodingServiceLink = document.querySelector('a[href="heat-island-poc/tile_0.1"]'); // Flooding Service link
   const allServiceLinks = document.querySelectorAll('.sidebar-content a'); // All service links
 
   // Function to show iframe and hide main content
@@ -569,10 +569,10 @@
   }
 
   // Event listener for Flooding Service
-  floodingServiceLink.addEventListener("click", (event) => {
-    event.preventDefault(); // Prevent default anchor behavior
-    showFloodingIframe();
-  });
+  // floodingServiceLink.addEventListener("click", (event) => {
+  //   event.preventDefault(); // Prevent default anchor behavior
+  //   showFloodingIframe();
+  // });
 
   // Event listener for all other service links to restore viewDiv
   allServiceLinks.forEach(link => {
