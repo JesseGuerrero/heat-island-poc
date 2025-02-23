@@ -337,7 +337,9 @@
         <a href="#option3" id="uhiService" style="text-decoration: none; color: black;"><i class="fas fa-temperature-high" style="margin-right: 10px; color: black;width: 15px;"></i>UHI Service</a>
       </li>
       <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
-        <a href="https://jesseguerrero.github.io/heat-island-poc/tile_0.1" style="text-decoration: none; color: black;"><i class="fas fa-water" style="margin-right: 10px; color: black;width: 15px;"></i>Flooding Service</a>
+        <a href="https://jesseguerrero.github.io/heat-island-poc/tile_0.1" target="_blank" style="text-decoration: none; color: black;">
+          <i class="fas fa-water" style="margin-right: 10px; color: black;width: 15px;"></i>Flooding Service
+        </a>
       </li>
 
       <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
@@ -570,7 +572,9 @@
 
   // Event listener for Flooding Service
   floodingServiceLink.addEventListener("click", (event) => {
+    event.preventDefault(); // Add this to prevent default behavior
     window.location.href = "https://jesseguerrero.github.io/heat-island-poc/tile_0.1";
+    console.log("clicked");
   });
 
 
