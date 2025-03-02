@@ -1,655 +1,884 @@
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <title>Heat Island Simulator</title>
-    <link rel="icon" type="image/x-icon" href="tree.png">
-    <link
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-            rel="stylesheet"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.111.0/Cesium.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/cesium/1.111.0/Widgets/widgets.min.css" rel="stylesheet">
-    <style>
-        html,
-        body,
-        #cesiumContainer, #viewDiviFrame {
-            padding: 0;
-            margin: 0;
-            height: 98%;
-            width: 100%;
-            bottom: 0;
-            position: absolute;
-        }
-        #infoDiv {
-            position: absolute;
-            top: 6px;
-            left: 60px;
-        }
-        #paneDiv {
-            padding: 10px;
-            width: 270px;
-            background-color: rgba(255, 255, 255, 0.8);
-            position: absolute;
-            bottom: 105px;
-            right: 0;
-        }
-        .esri-attribution {
-            display: none !important;
-        }
-        /* Floating Button */
-        #chatAIButton {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 64px;
-            height: 64px;
-            background-color: #2d2d2d;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-size: 1.5em;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            z-index: 1001;
-            transition: transform 0.2s ease, background-color 0.2s ease;
-        }
+  <!--
+  --CPS--
+  TODO: Quality Check CPS
+  TODO: Send to Javier
 
-        #chatAIButton:hover {
-            border: 2px solid antiquewhite;
-        }
+  TODO: Prevent LST Popups
+  TODO: Add Substation LiDAR
+  TODO: Follow up with Braydon
 
-        /* Overlay Background */
-        #overlayBackground {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
+  --Optional--
+  TODO: Add Dhruv's
+    TODO: Show Flood Command for Raster.
+    TODO: Make a checkbox slider (Really optional)
+    TODO: Pick a location with Dhruv
+  TODO: Add Rinu's
+    TODO: Add Power location
+    TODO: Make cenematic
+    TODO: Add fly-to a few services (Really optional)
 
-        /* Chat Overlay */
-        .chat-overlay {
-            visibility: hidden; /* Initially hidden */
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60vw;
-            height: 70vh;
-            max-width: 90%;
-            max-height: 90%;
-            background: #1e1e1e;
-            color: #fff;
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-            z-index: 1002;
-            flex-direction: column;
-        }
+  --Finally--
+  TODO: Quality Check and make sure buttons work
+  TODO: Send to Javier for voice
+  TODO: Send to Dr. Rad for check.
 
-        /* Chat Header */
-        .chat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: #2a2a2a;
-            border-bottom: 1px solid #3a3a3a;
-            font-size: 1.2em;
-        }
+  -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Heat Island Simulator</title>
+  <link
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+          rel="stylesheet"
+  />
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/2.13.2/calcite.css" />
+  <script type="module" src="https://js.arcgis.com/calcite-components/2.13.2/calcite.esm.js"></script>
+  <style>
+    html,
+    body,
+    #viewDiv {
+      padding: 0;
+      margin: 0;
+      height: 98%;
+      width: 100%;
+      bottom: 0;
+      position: absolute;
+    }
 
-        .chat-header h2 {
-            margin: 0;
-            color: #ddd;
-        }
+    #recordBtn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      background-color: #007bff;
+      color: #fff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        .close-btn {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 1.2em;
-            cursor: pointer;
-        }
+    #recordBtn i {
+      margin-right: 6px;
+      font-size: 1.2em;
+      margin: auto;
+    }
 
-        .close-btn:hover {
-            color: #e74c3c;
-        }
+    #recordBtn span {
+      display: none;
+      font-size: 0.9em;
+      white-space: nowrap;
+    }
 
-        /* Chat Body */
-        .chat-body {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 20px;
-            overflow-y: auto;
-        }
+    .esri-attribution {
+      display: none !important;
+    }
 
-        .chat-body h1 {
-            font-size: 2em;
-            margin-bottom: 20px;
-        }
+    .close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
 
-        .chat-body .input-container {
-            position: relative;
-            width: 60%;
-            max-width: 600px;
-        }
+    .close-btn:hover {
+      color: #e74c3c;
+    }
 
-        .chat-body .input-container input {
-            width: 100%;
-            padding: 15px 20px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1em;
-            background-color: #2a2a2a;
-            color: #ddd;
-        }
+    .sidebar {
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 300px;
+      background-color: white;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
 
-        .chat-body .input-container input::placeholder {
-            color: #888;
-        }
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px;
+      background-color: #f4f4f4;
+      border-bottom: 1px solid #ddd;
+    }
 
-        .chat-body .input-container .microphone {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: white;
-            font-size: 1.2em;
-        }
+    .sidebar-header h3 {
+      margin: 0;
+    }
 
-        .chat-body .button-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 20px;
-            gap: 10px;
-        }
+    .sidebar-content {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
 
-        .chat-body .button-container button {
-            background-color: #2a2a2a;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1em;
-        }
+    .sidebar-content li {
+      padding: 15px 20px;
+      border-bottom: 1px solid #f4f4f4;
+    }
 
-        .chat-textbox {
-            width: 80%; /* Width relative to the container */
-            max-width: 600px; /* Maximum width */
-            height: 100px; /* Height of the text box */
-            margin: 20px auto; /* Center horizontally with some spacing */
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 1em;
-            border: none;
-            background-color: #2a2a2a;
-            color: #ddd;
-            display: block; /* Ensures it takes its own line */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            resize: none; /* Disable resizing */
-        }
-        .chat-textbox::placeholder {
-            color: #888; /* Placeholder text color */
-        }
+    .sidebar-content li a {
+      text-decoration: none;
+      color: black;
+      font-size: 1em;
+    }
 
-        /* Fade-in Animation */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+    .sidebar-content li:hover {
+      background-color: #f0f0f0;
+    }
 
-        /* Sidebar Styles */
-        .sidebar {
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 300px;
-            background-color: white;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-            transform: translateX(-100%); /* Hidden initially */
-            transition: transform 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
+    .sidebar.open {
+      transform: translateX(0);
+    }
 
-        .sidebar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 13px;
-            background-color: #f4f4f4;
-            border-bottom: 1px solid #ddd;
-        }
+    calcite-icon[icon="compass-needle"] {
+      margin-left: -4px;
+    }
 
-        .sidebar-header h3 {
-            margin: 0;
-        }
+    .esri-time-slider {
+      display: none;
+    }
 
-        .sidebar-content {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+    .esri-weather__options--hidden {
+      display: none !important;
+    }
+  </style>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.31/"></script>
 
-        .sidebar-content li {
-            padding: 15px 20px;
-            border-bottom: 1px solid #f4f4f4;
-        }
-
-        .sidebar-content li a {
-            text-decoration: none;
-            color: black; /* Ensure text color contrasts with the white background */
-            font-size: 1em; /* Adjust font size for readability */
-        }
-
-        .sidebar-content li:hover {
-            background-color: #f0f0f0; /* Slightly darker for hover effect */
-        }
-
-        /* Show Sidebar */
-        .sidebar.open {
-            transform: translateX(0); /* Slide in */
-        }
-
-        #loadingOverlay {
-            display: none; /* Hidden by default */
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
-            z-index: 1000; /* Ensure it's above all other content */
-        }
-        #loadingIndicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 1.0);
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        calcite-icon[icon="compass-needle"] {
-            margin-left: -4px;
-        }
-
-
-    </style>
-    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css" />
-    <script src="https://js.arcgis.com/4.31/"></script>
-    <script src="indexOld.js"></script>
 </head>
 <body>
-
+<button id="recordBtn">
+  <i class="fas fa-microphone"></i>  <span>Start Recording</span>
+</button>
 <div id="header" style="display: flex; align-items: center; vertical-align: middle; margin-top: -20px; padding-left: 15px; font-size: 1.1em;">
-    <button id="hamburgerMenu" style="border: none; background: none; font-size: 1.5em; margin-right: 10px; cursor: pointer;">
-        <i class="fas fa-bars"></i>
-    </button>
-    <span id="title">SATX 2024 - 3D City</span>
+  <button id="hamburgerMenu" style="border: none; background: none; font-size: 1.5em; margin-right: 10px; cursor: pointer;">
+    <i class="fas fa-bars"></i>
+  </button>
+  <span id="title">SATX 2024 - 3D City</span>
 </div>
 <div style="display: flex; padding-top:13px; overflow: hidden;">
-    <div id="sidebarMenu" class="sidebar" style="flex-shrink: 0; overflow: hidden; transition: width 0.3s ease;">
-        <ul class="sidebar-content" style="list-style: none; padding: 0; margin: 0;">
-            <li style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f4f4f4;">
-                <a href="#option15" id="cityService" style="display: flex; align-items: center; text-decoration: none; color: black;">
-                    <i class="fas fa-city" style="margin-right: 10px; color: black; font-size: 1em; width: 15px;"></i>3D City
-                </a>
-                <button id="closeSidebar" class="close-btn" style="border: none; background: none; font-size: 1em; cursor: pointer; color: black;">✖</button>
-            </li>
-        </ul>
-        <div class="sidebar-header" style="background-color: #f4f4f4; padding: 10px; border-bottom: 1px solid #ddd;">
-            <h3 style="color: black;">Services</h3> <!-- Ensure the header text is visible -->
-        </div>
-        <ul class="sidebar-content" style="list-style: none; padding: 0; margin: 0;">
-            <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
-                <a href="#option2" style="text-decoration: none; color: black;"><i class="fas fa-home" style="margin-right: 10px; color: black;width: 15px;"></i>House Appraisals</a>
-            </li>
-            <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
-                <a href="#option3" id="uhiService" style="text-decoration: none; color: black;"><i class="fas fa-temperature-high" style="margin-right: 10px; color: black;width: 15px;"></i>UHI Service</a>
-            </li>
-            <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
-                <a href="#option4" style="text-decoration: none; color: black;"><i class="fas fa-water" style="margin-right: 10px; color: black;width: 15px;"></i>Flooding Service</a>
-            </li>
+  <div id="sidebarMenu" class="sidebar" style="flex-shrink: 0; overflow: hidden; transition: width 0.3s ease;">
+    <ul class="sidebar-content" style="list-style: none; padding: 0; margin: 0;">
+      <li style="display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option15" id="cityService" style="display: flex; align-items: center; text-decoration: none; color: black;">
+          <i class="fas fa-city" style="margin-right: 10px; color: black; font-size: 1em; width: 15px;"></i>3D City
+        </a>
+        <button id="closeSidebar" class="close-btn" style="border: none; background: none; font-size: 1em; cursor: pointer; color: black;">✖</button>
+      </li>
+    </ul>
+    <div class="sidebar-header" style="background-color: #f4f4f4; padding: 10px; border-bottom: 1px solid #ddd;">
+      <h3 style="color: black;">Services</h3>
+    </div>
+    <ul class="sidebar-content" style="list-style: none; padding: 0; margin: 0;">
+      <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option2" style="text-decoration: none; color: black;"><i class="fas fa-home" style="margin-right: 10px; color: black;width: 15px;"></i>House Appraisals</a>
+      </li>
+      <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option3" id="uhiService" style="text-decoration: none; color: black;"><i class="fas fa-temperature-high" style="margin-right: 10px; color: black;width: 15px;"></i>UHI Service</a>
+      </li>
+      <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a id="waterService" href="#option4" style="text-decoration: none; color: black;">
+          <i class="fas fa-water" style="margin-right: 10px; color: black;width: 15px;"></i>Flooding Service
+        </a>
+      </li>
+      <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
+        <a href="#option5" id="gridService" style="text-decoration: none; color: black;"><i class="fas fa-th" style="margin-right: 10px; color: black;width: 15px;"></i>Grid Service</a>
+      </li>
+    </ul>
+  </div>
 
-            <li style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #f4f4f4;">
-                <a href="#option5" style="text-decoration: none; color: black;"><i class="fas fa-th" style="margin-right: 10px; color: black;width: 15px;"></i>Grid Service</a>
-            </li>
-        </ul>
-    </div>
-    <div id="viewDiviFrame" style="flex-grow: 1; transition: margin-left 0.3s ease;">
-        <iframe id="floodingIframe"
-                src="https://dt-demo.prd.it.unity3d.com/"
-                width="100%"
-                height="100%"
-                style="border: none;">
-        </iframe>
-    </div>
-    <div id="cesiumContainer" style="flex-grow: 1; transition: margin-left 0.3s ease;"></div>
+  <div id="viewDiv" style="flex-grow: 1; transition: margin-left 0.3s ease;">
+  </div>
 </div>
+<script>
+  const viewDiv = document.getElementById('viewDiv');
+  const hamburgerMenu = document.getElementById('hamburgerMenu');
+  const closeSidebar = document.getElementById('closeSidebar');
+  const sidebarMenu = document.getElementById('sidebarMenu');
+  const sidebarWidth = 300;
 
+  // Function to toggle the sidebar
+  hamburgerMenu.addEventListener('click', () => {
+    if (sidebarMenu.classList.contains('open')) {
+      sidebarMenu.classList.remove('open');
+      viewDiv.style.marginLeft = '0px';
+      viewDiv.style.width = '100%';
+    } else {
+      sidebarMenu.classList.add('open');
+      viewDiv.style.marginLeft = `${sidebarWidth}px`;
+      viewDiv.style.width = `calc(100% - ${sidebarWidth}px)`;
+    }
+  });
 
-<!--<div id="paneDiv" style="display: none" class="esri-widget">-->
-<!--  <b>View Statistics:</b><br>-->
-<!--  Building Count: <b><span id="buildingCount">0</span></b><br>-->
-<!--  Tree Count: <b><span id="treeCount">0</span></b><br>-->
-<!--  Average temperature: <b><span id="avgTemperature">0°F</span></b><br><br>-->
-<!--  <b>Tree Year (function disabled)</b>-->
-<!--  <br>-->
-<!--  <select id="selectTreePopulus" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">-->
-<!--    <option value=1>2021</option>-->
-<!--    <option value=3>2017</option>-->
-<!--  </select>-->
-<!--  <b>Building Year (function disabled)</b>-->
-<!--  <br>-->
-<!--  <select id="selectBuildingPopulos" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">-->
-<!--    <option value=1>2021</option>-->
-<!--    <option value=3>2017</option>-->
-<!--  </select>-->
-<!--  <br>-->
-<!--  <b>LST Date</b>-->
-<!--  <br>-->
-<!--  <select id="selectLST" class="esri-widget" style="width: 230px; padding: 10px; margin: 10px">-->
-<!--    <option value=1>Sep 2024</option>-->
-<!--    <option value=2>Feb 2024</option>-->
-<!--&lt;!&ndash;    <option value=3>LCZ Test</option>&ndash;&gt;-->
-<!--  </select>-->
+  closeSidebar.addEventListener('click', () => {
+    sidebarMenu.classList.remove('open');
+    viewDiv.style.marginLeft = '0px';
+    viewDiv.style.width = '100%';
+  });
+</script>
+<script>
+  window.app = {
+    view: null,
+    makeRain: null,
+    makeSunny: null,
+    makeFog: null,
+    makeNight: null,
+    makeDay: null,
+    goTo: null,
+    openUHI: null,
+    open3DCity: null,
+    openGrid: null
+  };
+  require([
+    "esri/WebScene",
+    "esri/Camera",
+    "esri/request",
+    "esri/identity/IdentityManager",
+    "esri/views/SceneView",
+    "esri/layers/FeatureLayer",
+    "esri/widgets/Weather",
+    "esri/widgets/Daylight",
+    "esri/widgets/TimeSlider",
+    "esri/widgets/Zoom",
+    "esri/widgets/Legend",
+    "esri/widgets/Expand",
+    "esri/widgets/TimeZoneLabel",
+    "esri/layers/GraphicsLayer",
+    "esri/layers/SceneLayer",
+    "esri/layers/TileLayer",
+    "esri/request"
+  ], function(WebScene, Camera, esriRequest, IdentityManager, SceneView, FeatureLayer, Weather, Daylight, TimeSlider, Zoom, Legend, Expand, TimeZoneLabel, GraphicsLayer, SceneLayer, TileLayer, esriRequest) {
+    async function initializeMap() {
+      async function initToken() { //I will change the password later. We Will also move this to .env file when you get an account.
+        const username = "jesus.guerrero6_utsa";
+        const password = "D0lot$ofwork";
 
-<!--</div>-->
-<div id="overlayBackground"></div>
-<button id="chatAIButton">
-    <i class="fas fa-building"></i>
-</button>
-<div id="chatAIOverlay" class="chat-overlay">
-    <div class="chat-header">
-        <h2>AI Model</h2>
-        <button id="closeChatAI" class="close-btn">✖</button>
-    </div>
-    <div class="chat-body">
-        <h1>What can I help with?</h1>
-        <textarea id="chatTextbox" class="chat-textbox" placeholder="..."></textarea>
-        <div class="input-container">
-            <input type="text" placeholder="Message LLM" />
-            <i class="fas fa-microphone microphone"></i>
-        </div>
-        <div class="button-container">
-            <button>Show me a raster</button>
-            <button>Surprise me</button>
-            <button>Analyze products</button>
-            <button>Summarize findings</button>
-            <button>Setup a scene</button>
-            <button>More</button>
-        </div>
-    </div>
-</div>
-<div id="loadingOverlay">
-    <div id="loadingIndicator">
-        Loading, please wait...
-    </div>
-    <script>
-        // Function to listen to SSE and update the chatTextbox
-        function listenToSSE(prompt) {
-            // Get reference to the chatTextbox
-            const chatTextbox = document.getElementById('chatTextbox');
-
-            // SSE URL
-            const sseUrl = `https://2172-129-115-106-110.ngrok-free.app/stream?prompt=${encodeURIComponent(prompt)}`; <!-- Make the Hello+World the prompt from the input tag inside input-container-->
-
-            // Create a Fetch request with custom headers
-            fetch(sseUrl, {
-                headers: {
-                    "ngrok-skip-browser-warning": "true",
-                }
-            })
-                .then(response => {
-                    // Ensure the response is OK and readable as a stream
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder("utf-8");
-
-                    // Function to read the stream
-                    function readStream() {
-                        reader.read().then(({ done, value }) => {
-                            if (done) {
-                                console.log("Stream complete.");
-                                return;
-                            }
-                            const chunk = decoder.decode(value, { stream: true });
-                            const lines = chunk.split("\n");
-                            for (const line of lines) {
-                                // Look for lines starting with "data:"
-                                if (line.startsWith("data:")) {
-                                    // Extract the data after "data:"
-                                    const data = line.slice(5);
-                                    if (data) {
-                                        chatTextbox.value += data;
-                                    }
-                                }
-                            }
-
-                            // Continue reading
-                            readStream();
-                        });
-                    }
-
-                    // Start reading the stream
-                    readStream();
-                })
-                .catch(err => {
-                    console.error("Fetch error:", err);
-                });
-        }
-
-        const chatAIButton = document.getElementById('chatAIButton');
-        const chatAIOverlay = document.getElementById('chatAIOverlay');
-        const overlayBackground = document.getElementById('overlayBackground');
-        const closeChatAI = document.getElementById('closeChatAI');
-        const cesiumContainer = document.getElementById('cesiumContainer');
-        const viewDiviFrame = document.getElementById('viewDiviFrame');
-
-        // Start with Chat AI overlay hidden
-        chatAIOverlay.style.display = 'none';
-        overlayBackground.style.display = 'none';
-        viewDiviFrame.style.display = "none";
-
-        // Toggle Chat AI overlay
-        chatAIButton.addEventListener('click', () => {
-            const isVisible = chatAIOverlay.style.visibility === 'visible';
-            chatAIOverlay.style.visibility = isVisible ? 'hidden' : 'visible';
-            chatAIOverlay.style.display = isVisible ? 'none' : 'flex';
-            overlayBackground.style.display = isVisible ? 'none' : 'block';
-        });
-
-        // Close Chat AI overlay
-        closeChatAI.addEventListener('click', () => {
-            chatAIOverlay.style.visibility = 'hidden';
-            chatAIOverlay.style.display = 'none';
-            overlayBackground.style.display = 'none';
-        });
-
-        const chatInput = document.querySelector('.input-container input');
-
-        // Add keydown event listener to detect when the "Enter" key is pressed
-        chatInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                const message = chatInput.value.trim(); // Get the input value
-                if (message) {
-                    listenToSSE(message);
-
-                    // Clear the input field after sending the message
-                    chatInput.value = '';
-                } else {
-                    alert('Please enter a message before pressing Enter!');
-                }
-            }
-        });
-        // Get references to the input field and the microphone icon
-        const microphoneIcon = document.querySelector('.microphone');
-
-        // Function to toggle the microphone to an arrow up
-        const toggleIcon = () => {
-            if (chatInput.value.trim()) {
-                // If input has text, change icon to arrow up
-                microphoneIcon.classList.remove('fa-microphone');
-                microphoneIcon.classList.add('fa-arrow-up');
-            } else {
-                // If input is empty, revert to microphone
-                microphoneIcon.classList.remove('fa-arrow-up');
-                microphoneIcon.classList.add('fa-microphone');
-            }
+        // Step 2: Generate token programmatically (for development purposes)
+        const tokenUrl = "https://utsa.maps.arcgis.com/sharing/rest/generateToken";
+        const tokenParams = {
+          username: username,
+          password: password,
+          referer: window.location.origin,
+          expiration: 60,
+          f: "json"
         };
+        const response = await esriRequest(tokenUrl, {
+          method: "post",
+          query: tokenParams
+        });
+        const token = response.data.token;
+        IdentityManager.registerToken({
+          server: "https://utsa.maps.arcgis.com",
+          token: token,
+          userId: username
+        });
+        return token;
+      }
+      const token = await initToken();
 
-        // Add input event listener to the input field
-        chatInput.addEventListener('input', toggleIcon);
+      const cameraLocations = [
+        {
+          name: 'StartingPosition',
+          cameraOptions: {
+            position: {
+              x: -98.5080,
+              y: 29.4250,
+              z: 800
+            },
+            heading: 90,
+            tilt: 65
+          }
+        },
+        {
+          name: 'America',
+          cameraOptions: {
+            position: {
+              x: -98.4830,
+              y: 29.4078,
+              z: 800
+            },
+            heading: 0,
+            tilt: 65
+          }
+        },
+        {
+          name: 'Alamo Dome',
+          cameraOptions: {
+            position: {
+              x: -98.4700,
+              y: 29.4170,
+              z: 800
+            },
+            heading: -90,
+            tilt: 55
+          }
+        },
+        {
+          name: 'UHI',
+          cameraOptions: {
+            position: {
+              x: -98.4830,
+              y: 29.4000,
+              z: 1400
+            },
+            heading: 0,
+            tilt: 65
+          }
+        },
+        {
+          name: '3DCity',
+          cameraOptions: {
+            position: {
+              x: -98.4830,
+              y: 29.4150,
+              z: 900
+            },
+            heading: 0,
+            tilt: 50
+          }
+        },
+        {
+          name: 'Power',
+          cameraOptions: {
+            position: {
+              x: -98.6185,
+              y: 29.5900,
+              z: 720
+            },
+            heading: -40,
+            tilt: 60
+          }
+        },
+        {
+          name: 'Library',
+          cameraOptions: {
+            position: {
+              x: -98.5040,
+              y: 29.4390,
+              z: 800
+            },
+            heading: 125,
+            tilt: 63
+          }
+        },
+        {
+          name: 'DataScience',
+          cameraOptions: {
+            position: {
+              x: -98.5070,
+              y: 29.4250,
+              z: 800
+            },
+            heading: 95,
+            tilt: 60
+          }
+        },
+        {
+          name: 'FrostTower',
+          cameraOptions: {
+            position: {
+              x: -98.4970,
+              y: 29.4360,
+              z: 800
+            },
+            heading: 169,
+            tilt: 59
+          }
+        }
+      ];
+      const cameraMap = new Map(
+              cameraLocations.map(location => [location.name, location.cameraOptions])
+      );
 
-        const hamburgerMenu = document.getElementById('hamburgerMenu');
-        const closeSidebar = document.getElementById('closeSidebar');
-        const sidebarMenu = document.getElementById('sidebarMenu');
+      function fly(cameraOptions, duration=3000) {
+        window.app.view.goTo(cameraOptions, {
+          duration: duration,  // Duration in milliseconds (3 seconds)
+          easing: "out-cubic"  // Smooth easing function
+        });
+      }
+      const fullScene = new WebScene({
+        portalItem: {
+          id: "2ad5b97f14f044259202a4d97c7f78cc"
+        }
+      });
+      let view = new SceneView({
+        container: "viewDiv",
+        map: fullScene,
+        center: [-98.4936, 29.426],
+        zoom: 18,
+        camera: cameraMap.get('StartingPosition'),
+        environment: {
+          weather: {
+            type: "sunny",
+            cloudCover: 0.2,
+            precipitation: 0.0
+          }
+        }
+      });
 
-        const sidebarWidth = 300; // Sidebar width in pixels
-
-        // Function to toggle the sidebar
-        hamburgerMenu.addEventListener('click', () => {
-            if (sidebarMenu.classList.contains('open')) {
-                // Sidebar is open, so close it
-                sidebarMenu.classList.remove('open'); // Hide sidebar
-                cesiumContainer.style.marginLeft = '0px'; // Reset cesiumContainer margin
-                cesiumContainer.style.width = '100%'; // Reset cesiumContainer width
-                viewDiviFrame.style.marginLeft = '0px'; // Reset viewDiv margin
-                viewDiviFrame.style.width = '100%'; // Reset viewDiv width
-            } else {
-                // Sidebar is closed, so open it
-                sidebarMenu.classList.add('open'); // Show sidebar
-                cesiumContainer.style.marginLeft = `${sidebarWidth}px`; // Shift cesiumContainer to the right
-                cesiumContainer.style.width = `calc(100% - ${sidebarWidth}px)`; // Adjust width of cesiumContainer
-                viewDiviFrame.style.marginLeft = `${sidebarWidth}px`; // Shift cesiumContainer to the right
-                viewDiviFrame.style.width = `calc(100% - ${sidebarWidth}px)`; // Adjust width of cesiumContainer
+      fullScene.when(() => {
+        fullScene.allLayers.forEach((layer) => {
+          // console.log(layer.title)
+          if(layer.title.includes("Polygons")) {
+            layer.popupEnabled = true
+            layer.renderer = {
+              type: "simple",
+              symbol: {
+                type: "polygon-3d",
+                symbolLayers: [{
+                  type: "fill",
+                  material: {
+                    color: [0, 0, 0, 0.01]
+                  },
+                  outline: {
+                    color: [0, 0, 0, 0.01],
+                    width: 0.5
+                  }
+                }]
+              }
             }
+            layer.elevationInfo = {
+              mode: "relative-to-scene",
+              offset: 0,
+              featureExpressionInfo: {
+                expression: "0"  // Force features to ground level
+              },
+              unit: "meters"
+            }
+            layer.popupTemplate = {
+              title: "{expression/buildingName}",
+              expressionInfos: [{
+                name: "buildingName",
+                title: "Building Name",
+                expression: "Dictionary($feature.names).primary"
+              }],
+              content: [{
+                type: "fields",
+                fieldInfos: [{
+                  fieldName: "expression/buildingName",
+                  label: "Building Name"
+                }]
+              }],
+              outFields: ["names"]
+            }
+          } else
+            layer.popupEnabled = false
+        })
+        selectGroupLayer("3DCity")
+      });
+
+      //HeatIsland, 3DCity, Power
+      function selectGroupLayer(groupLayerTitle) {
+        fullScene.layers.forEach(layer => {
+          if (layer.type === "group") {
+            layer.visible = layer.title === groupLayerTitle;
+            console.log(`Group layer "${layer.title}" visibility set to: ${layer.title === groupLayerTitle}`);
+          }
         });
+      }
 
-        // Function to close the sidebar
-        closeSidebar.addEventListener('click', () => {
-            sidebarMenu.classList.remove('open'); // Hide sidebar
-            cesiumContainer.style.marginLeft = '0px'; // Reset cesiumContainer margin
-            cesiumContainer.style.width = '100%'; // Reset cesiumContainer width
-            viewDiviFrame.style.marginLeft = '0px'; // Reset cesiumContainer margin
-            viewDiviFrame.style.width = '100%'; // Reset cesiumContainer width
-        });
 
-        const floodingServiceLink = document.querySelector('a[href="#option4"]'); // Flooding Service link
-        const allServiceLinks = document.querySelectorAll('.sidebar-content a'); // All service links
 
-        // Function to show iframe and hide main content
-        function showFloodingIframe() {
-            cesiumContainer.style.display = "none";
-            viewDiviFrame.style.display = "block";
+      window.app.view = view;
+      window.app.makeRain = () => {
+        window.app.view.environment.weather = {
+          type: "rainy",
+          cloudCover: 0.7,
+          precipitation: 0.3
+        };
+      };
+      window.app.makeSunny = () => {
+        window.app.view.environment.weather = {
+          type: "sunny",
+          cloudCover: 0.1,
+          precipitation: 0.0
+        };
+      };
+      window.app.makeFog = () => {
+        window.app.view.environment.weather = {
+          type: "foggy",
+          cloudCover: 0.2,
+          precipitation: 0.0,
+          fogStrength: 0.35
+        };
+      };
+
+      function stepToTime(hour) {
+        const currentDate = view.environment.lighting.date;
+        const targetDate = new Date(currentDate);
+        targetDate.setHours(hour, 0, 0, 0);
+
+        if (targetDate.getTime() < currentDate.getTime()) {
+          targetDate.setDate(targetDate.getDate() + 1);
         }
 
-        // Function to show main content and hide iframe
-        function showMainContent() {
-            cesiumContainer.style.display = "flex";
-            viewDiviFrame.style.display = "none";
+        const duration = 6000;
+        const startTime = performance.now();
+        const startDate = new Date(currentDate);
+
+        if (window.timeAnimation) {
+          clearTimeout(window.timeAnimation);
+          window.timeAnimation = null;
         }
 
-        // Event listener for Flooding Service
-        floodingServiceLink.addEventListener("click", (event) => {
-            event.preventDefault(); // Prevent default anchor behavior
-            showFloodingIframe();
-        });
+        function animateStep(timestamp) {
+          let progress = (timestamp - startTime) / duration;
+          progress = Math.min(progress, 1);
+          progress = progress < 0.5 ?
+                  4 * progress * progress * progress :
+                  1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-        // Event listener for all other service links to restore viewDiv
-        allServiceLinks.forEach(link => {
-            if (link !== floodingServiceLink) { // Exclude Flooding Service link
-                link.addEventListener("click", (event) => {
-                    event.preventDefault(); // Prevent default anchor behavior
-                    showMainContent();
-                });
-            }
-        });
+          const newTime = new Date(
+                  startDate.getTime() + (targetDate.getTime() - startDate.getTime()) * progress
+          );
+          view.environment.lighting.date = newTime;
+          if (progress < 1)
+            window.timeAnimation = requestAnimationFrame(animateStep);
+          else {
+            view.environment.lighting.date = targetDate;
+            window.timeAnimation = null;
+          }
+        }
+        window.timeAnimation = requestAnimationFrame(animateStep);
+      }
 
-        // Initialize the application
-        async function initCesium() {
-            Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJmMTBkNmYwYi02NjE1LTQ0MDItYTU0MC1iMmI5YTBjYmIxNTYiLCJpZCI6Mjc1NTU0LCJpYXQiOjE3Mzk0MDE1NTB9.mPvU0lpHt2S_outuu1hRq_5dReEifbBc-YIbPUtv4wU";
-            // Create the viewer
-            const viewer = new Cesium.Viewer('cesiumContainer', {
-                timeline: false,
-                animation: false,
-                baseLayerPicker: false,
-                fullscreenButton: false,
-                vrButton: false,
-                geocoder: false,
-                homeButton: false,
-                infoBox: false,
-                sceneModePicker: false,
-                selectionIndicator: false,
-                navigationHelpButton: false,
-                navigationInstructionsInitiallyVisible: false
+      window.app.makeDay = () => {
+        stepToTime(17)
+      };
+
+      window.app.makeNight = () => {
+        stepToTime(1)
+      };
+
+      function selectByObjectID(objectID) {
+        fullScene.allLayers.forEach((layer) => {
+          if(layer.title.includes("Polygons")) {
+
+            // Create a query to find the Tower of the Americas
+            const query = layer.createQuery();
+            query.where = "OBJECTID = " + objectID.toString(); // Direct query using the OBJECTID we can see in the image
+            query.returnGeometry = true;
+            query.outFields = ["*"];
+
+            layer.queryFeatures(query)
+                    .then((result) => {
+                      if (result.features && result.features.length > 0) {
+                        const feature = result.features[0];
+                        if (view.popup) {
+                          // Check if popup exists before trying to clear it
+                          if (typeof view.popup.clear === 'function') {
+                            view.popup.clear();
+                          } else if (typeof view.popup.visible !== 'undefined') {
+                            view.popup.visible = false;
+                          }
+                        }
+                        view.popup.visible = false;
+                        view.whenLayerView(layer).then(function(layerView) {
+                          if (window.highlightHandle) {
+                            window.highlightHandle.remove();
+                            window.highlightHandle = null;
+                          }
+
+                          window.highlightHandle = layerView.highlight(feature);
+
+                          if (view.popup) {
+                            if (typeof view.popup.set === 'function') {
+                              view.popup.set({
+                                features: [feature],
+                                location: feature.geometry.centroid
+                              });
+                              if (typeof view.popup.visible !== 'undefined') {
+                                view.popup.visible = false;
+                              }
+                            } else if (typeof view.popup.features !== 'undefined') {
+                              view.popup.features = [feature];
+                              view.popup.location = feature.geometry.centroid;
+                              if (typeof view.popup.visible !== 'undefined') {
+                                view.popup.visible = false;
+                              }
+                            }
+                          }
+                        });
+                      }
+                    })
+
+          }
+        });
+      }
+      window.app.goTo = (buildingName) => {
+        let cameraOptions;
+        if(buildingName === "america") {
+          cameraOptions = cameraMap.get("America");
+          selectByObjectID(254086)
+        }
+        else if(buildingName === "dome") {
+          cameraOptions = cameraMap.get("Alamo Dome");
+          selectByObjectID(263094)
+        }
+        else if(buildingName === "science") {
+          cameraOptions = cameraMap.get("DataScience");
+          selectByObjectID(258611)
+        }
+        else if(buildingName === "library") {
+          cameraOptions = cameraMap.get("Library");
+          selectByObjectID(259470)
+        }
+        else if(buildingName === "frost") {
+          cameraOptions = cameraMap.get("FrostTower");
+          selectByObjectID(258761)
+        }
+        if (cameraOptions) {
+          fly(cameraOptions);
+        }
+
+      };
+
+      window.app.openUHI = () => {
+        cameraOptions = cameraMap.get("UHI")
+        selectGroupLayer('HeatIsland')
+        fly(cameraOptions)
+        fullScene.add(temporalTemperature)
+        temporalTemperature.popupEnabled = false;
+        title.innerText = "SATX 2024 - Heat Island"
+        const timeSlider = document.getElementsByClassName('esri-time-slider')[0];
+        const weatherSlider = document.getElementsByClassName('esri-ui-top-right')[0];
+        weatherSlider.style.display = "none";
+        timeSlider.style.display = "block";
+      }
+
+      window.app.open3DCity = () => {
+        cameraOptions = cameraMap.get("3DCity")
+        selectGroupLayer('3DCity')
+        fly(cameraOptions)
+        fullScene.remove(temporalTemperature)
+        title.innerText = "SATX 2024 - 3D City"
+        const timeSlider = document.getElementsByClassName('esri-time-slider')[0];
+        const weatherSlider = document.getElementsByClassName('esri-ui-top-right')[0];
+        weatherSlider.style.display = "block";
+        timeSlider.style.display = "none";
+      }
+
+      window.app.openGrid = () => {
+        cameraOptions = cameraMap.get("Power")
+        selectGroupLayer('Power')
+        fly(cameraOptions, 8000)
+        fullScene.remove(temporalTemperature)
+        title.innerText = "SATX 2024 - Power Grid"
+        const timeSlider = document.getElementsByClassName('esri-time-slider')[0];
+        const weatherSlider = document.getElementsByClassName('esri-ui-top-right')[0];
+        weatherSlider.style.display = "block";
+        timeSlider.style.display = "none";
+      }
+
+      const temporalTemperature = new FeatureLayer({
+        portalItem: {
+          id: "02795552320b48bda2e49d9995057921",
+        },
+        timeInfo: {
+          startField: "AcquisitionDate",
+          endField: "AcquisitionDate",
+          timeExtent: {
+            start: new Date(1577836800000),  // Your earliest timestamp
+            end: new Date(1577836800000 + (365 * 24 * 60 * 60 * 1000))  // One year later
+          }
+        }
+      });
+
+      function colorRampPrediction(min, max, value) {
+        const normalizedValue = (value - min) / (max - min);
+        const startColor = { r: 0, g: 128, b: 128 };
+        const midColor = { r: 255, g: 255, b: 0 };
+        const endColor = { r: 255, g: 0, b: 0 };
+
+        let r, g, b;
+        if (normalizedValue < 0.5) {
+          const t = normalizedValue * 2;
+          r = Math.round(startColor.r + t * (midColor.r - startColor.r));
+          g = Math.round(startColor.g + t * (midColor.g - startColor.g));
+          b = Math.round(startColor.b + t * (midColor.b - startColor.b));
+        } else {
+          const t = (normalizedValue - 0.5) * 2;
+          r = Math.round(midColor.r + t * (endColor.r - midColor.r));
+          g = Math.round(midColor.g + t * (endColor.g - midColor.g));
+          b = Math.round(midColor.b + t * (endColor.b - midColor.b));
+        }
+
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+
+      async function rampLSTToPrediction(lstLayer, valueString, fieldName = valueString) {
+        try {
+          const result = await lstLayer.queryFeatures({
+            where: "1=1",
+            outStatistics: [
+              {
+                statisticType: "min",
+                onStatisticField: valueString,
+                outStatisticFieldName: "minValue"
+              },
+              {
+                statisticType: "max",
+                onStatisticField: valueString,
+                outStatisticFieldName: "maxValue"
+              }
+            ]
+          });
+
+          const popupTemplate = {
+            title: "Weather",
+            content: [{
+              type: "fields",
+              fieldInfos: [{
+                fieldName: fieldName,
+                label: "Temperature (°F)",
+                visible: false
+              }]
+            }]
+          };
+
+          const stats = result.features[0].attributes;
+          const minValue = stats.minValue;
+          const maxValue = stats.maxValue;
+          const uniqueValueInfos = [];
+          for (let value = minValue; value <= maxValue; value++) {
+            uniqueValueInfos.push({
+              value: value,
+              symbol: {
+                type: "simple-fill",
+                color: colorRampPrediction(minValue, maxValue, value),
+                outline: {
+                  width: 0,
+                }
+              }
             });
+          }
 
-            // Set terrain provider
-            viewer.terrainProvider = await Cesium.createWorldTerrainAsync({
-                requestWaterMask: true,
-                requestVertexNormals: true
-            });
-
-            // San Antonio coordinates
-            const sanAntonio = Cesium.Cartesian3.fromDegrees(-98.484, 29.405, 1500);
-
-            try {
-                // Load the specified tileset
-                const tileset = viewer.scene.primitives.add(
-                    await Cesium.Cesium3DTileset.fromIonAssetId(2275207)
-                );
-
-                // Fly to San Antonio
-                viewer.camera.setView({
-                    destination: sanAntonio,
-                    orientation: {
-                        heading: Cesium.Math.toRadians(0),
-                        pitch: Cesium.Math.toRadians(-45),
-                        roll: 0.0
-                    },
-                    duration: 3
-                });
-            } catch (error) {
-                console.error('Error loading tileset:', error);
-            }
-
-            // Enable lighting
-            viewer.scene.globe.enableLighting = true;
+          const renderer = {
+            type: "unique-value",
+            field: valueString,
+            uniqueValueInfos: uniqueValueInfos
+          };
+          lstLayer.renderer = renderer;
+          lstLayer.popupTemplate = popupTemplate;
+          lstLayer.opacity = 0.5;
+        } catch (error) {
+          console.error("Error querying features:", error);
         }
+      }
 
-        // Start the application
-        initCesium().catch(error => {
-            console.error('Failed to initialize Cesium:', error);
+      temporalTemperature.when(async () => {
+        try {
+          await rampLSTToPrediction(temporalTemperature, "rank", "gridcode");
+        } catch (error) {
+          console.error("Error applying renderer to layer:", error);
+        }
+      });
+      temporalTemperature.load().then(async () => {
+        const uniqueDatesQuery = await temporalTemperature.queryFeatures({
+          where: "1=1",
+          outFields: ["AcquisitionDate"],
+          returnDistinctValues: true,
+          orderByFields: "AcquisitionDate"
         });
-    </script>
+
+        const uniqueDates = uniqueDatesQuery.features
+                .map(f => f.attributes.AcquisitionDate)
+                .sort((a, b) => a - b);
+
+        const timeSlider = new TimeSlider({
+          container: "timeSlider",
+          view: view,
+          mode: "instant",
+          fullTimeExtent: {
+            start: new Date(uniqueDates[0]),
+            end: new Date(uniqueDates[uniqueDates.length - 1])
+          },
+          stops: {
+            dates: uniqueDates.map(date => new Date(date))
+          },
+          layout: "auto",
+          timeVisible: true,
+          loop: true,
+          playRate: 2000,
+          labelFormatFunction: (value) => {
+            return new Date(value).toLocaleDateString();
+          }
+        });
+
+        view.ui.add(timeSlider, "bottom-right");
+      }).catch((error) => {
+        console.error("Error loading layer:", error);
+      });
+
+      const zoom = new Zoom({
+        view: view
+      });
+      view.ui.add(zoom, "top-left");
+
+      const legend = new Legend({
+        view: view
+      });
+
+      const expand = new Expand({
+        view: view,
+        content: legend,
+        mode: "floating"
+      });
+      view.ui.add(expand, "top-left");
+
+      const weatherExpand = new Expand({
+        view: view,
+        content: new Weather({
+          view: view
+        }),
+        group: "top-right",
+        expanded: true
+      });
+
+      const daylightExpand = new Expand({
+        view: view,
+        content: new Daylight({
+          view: view
+        }),
+        group: "top-right"
+      });
+      view.ui.add([weatherExpand, daylightExpand], "top-right");
+
+      //Toggle UHI
+      const cityService = document.getElementById('cityService');
+      const uhiService = document.getElementById('uhiService');
+      // const waterService = document.getElementById('waterService');
+      const gridService = document.getElementById('gridService');
+      const title = document.getElementById('title');
+      cityService.addEventListener('click', () => {
+        window.app.open3DCity()
+      })
+      uhiService.addEventListener('click', () => {
+        window.app.openUHI()
+      })
+      gridService.addEventListener('click', () => {
+        window.app.openGrid()
+      })
+      // waterService.addEventListener('click', () => {
+      //   //window.app.openWater() Do this last
+      // })
+    };
+    initializeMap();
+  });
+</script>
+<script src="app.js"></script>
 </body>
 </html>
-
-
-
